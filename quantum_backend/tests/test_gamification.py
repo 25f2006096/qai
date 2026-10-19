@@ -6,12 +6,19 @@ from app.services.gamification_service import level_for_xp
 def test_circuit_mission_validation_requires_the_learning_objective():
     superposition = CircuitMissionSubmission(qubits=1, operations=[{"gate": "H", "target": 0, "col": 0}])
     incomplete_bell = CircuitMissionSubmission(qubits=2, operations=[{"gate": "H", "target": 0, "col": 0}])
+    noisy_superposition = CircuitMissionSubmission(qubits=1, operations=[{"gate": "H", "target": 0, "col": 0}, {"gate": "X", "target": 0, "col": 1}])
+    reversed_bell = CircuitMissionSubmission(qubits=2, operations=[
+        {"gate": "CNOT", "control": 0, "target": 1, "col": 0},
+        {"gate": "H", "target": 0, "col": 1},
+    ])
     bell = CircuitMissionSubmission(qubits=2, operations=[
         {"gate": "H", "target": 0, "col": 0},
         {"gate": "CNOT", "control": 0, "target": 1, "col": 1},
     ])
     assert _matches_mission("build-superposition", superposition)
+    assert not _matches_mission("build-superposition", noisy_superposition)
     assert not _matches_mission("build-bell-state", incomplete_bell)
+    assert not _matches_mission("build-bell-state", reversed_bell)
     assert _matches_mission("build-bell-state", bell)
 
 
