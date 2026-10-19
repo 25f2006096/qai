@@ -24,6 +24,18 @@ const REPAIR_SCENARIOS = {
   },
 };
 
+const BOSS_SCENARIOS = {
+  'entanglement-guardian': {
+    missionId: 'build-bell-state',
+    title: 'Boss Battle: The Entanglement Guardian',
+    stages: [
+      'Prepare q0 in superposition with H.',
+      'Entangle q0 and q1 with CNOT.',
+      'Simulate and submit the verified Bell-state circuit.',
+    ],
+  },
+};
+
 function opsToQasm(ops, nQubits) {
   let qasm = `OPENQASM 2.0;\ninclude "qelib1.inc";\n\nqreg q[${nQubits}];\ncreg c[${nQubits}];\n\n`;
   ops.forEach(op => {
@@ -102,10 +114,14 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
   const [missionSubmitting, setMissionSubmitting] = useState(false);
   const [missionToast, setMissionToast] = useState(null);
   const repairLoaded = useRef(false);
+  const [bossStage, setBossStage] = useState(0);
+  const [bossFeedback, setBossFeedback] = useState('');
 
   const queryMissionId = !embedded ? new URLSearchParams(window.location.search).get('mission') : null;
   const repairId = !embedded ? new URLSearchParams(window.location.search).get('repair') : null;
   const repairScenario = repairId ? REPAIR_SCENARIOS[repairId] : null;
+  const bossId = !embedded ? new URLSearchParams(window.location.search).get('boss') : null;
+  const bossScenario = bossId ? BOSS_SCENARIOS[bossId] : null;
   const missions = gamification?.missions || [];
   const activeMission = missions.find(mission => mission.id === queryMissionId)
     || (queryMissionId ? null : missions.find(mission => !['completed', 'mastered'].includes(mission.status)));
@@ -245,6 +261,24 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
     }
   };
 
+  const validateBossStage = () => {
+    if (!bossScenario) return;
+    const gates = ops.filter(operation => operation.gate !== 'M').sort((a, b) => a.col - b.col);
+    const hasSuperposition = gates.length === 1 && gates[0]?.gate === 'H' && gates[0]?.target === 0;
+    const hasBellState = gates.length === 2 && gates[0]?.gate === 'H' && gates[0]?.target === 0
+      && gates[1]?.gate === 'CNOT' && gates[1]?.control === 0 && gates[1]?.target === 1;
+    if (bossStage === 0) {
+      if (!hasSuperposition) return setBossFeedback('Stage 1 needs exactly H on q0. Remove unrelated gates and try again.');
+      setBossStage(1); return setBossFeedback('Stage 1 verified locally. Add CNOT with q0 as control and q1 as target.');
+    }
+    if (bossStage === 1) {
+      if (!hasBellState) return setBossFeedback('Stage 2 needs H(q0) followed by CNOT(q0, q1).');
+      setBossStage(2); return setBossFeedback('Stage 2 verified locally. Run the simulator, then submit the existing verified mission.');
+    }
+    if (!results || results.error) return setBossFeedback('Run a successful simulation before completing the final stage.');
+    setBossFeedback('Final stage is ready. Use Verify & Claim XP for server validation.');
+  };
+
   const saveCircuit = async () => {
     if (!user || !saveName.trim()) return;
     await storage.insertCircuit(user.id, saveName, nQubits, ops);
@@ -283,6 +317,14 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
                 <strong>{repairScenario.title}:</strong> {repairScenario.instruction}
               </div>
             )}
+            {bossScenario && bossScenario.missionId === activeMission.id && (
+              <div className="mission-feedback" role="status" style={{ marginTop: 10 }}>
+                <strong>{bossScenario.title}</strong> · Stage {bossStage + 1} of {bossScenario.stages.length}: {bossScenario.stages[bossStage]}
+                <div style={{ marginTop: 8 }}><button className="btn btn-secondary btn-sm" onClick={validateBossStage}>Check stage</button></div>
+                {bossFeedback && <div style={{ marginTop: 7 }}>{bossFeedback}</div>}
+                <div style={{ color: 'var(--text-muted)', fontSize: '.72rem', marginTop: 8 }}>Stage state is retained for this browser session only; verified mission rewards remain server-owned.</div>
+              </div>
+            )}
             <div className="mission-meta">
               <span className="tag tag-accent">+{activeMission.xp_reward} XP</span>
               <span className="tag tag-info">{activeMission.estimated_minutes} min</span>
@@ -302,6 +344,11 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
       {!embedded && !repairScenario && queryMissionId === 'build-superposition' && (
         <button className="text-action" style={{ marginBottom: 12 }} onClick={() => window.location.assign('/circuit?mission=build-superposition&repair=superposition-reset')}>
           Try the guided Circuit Repair Mission →
+        </button>
+      )}
+      {!embedded && !bossScenario && queryMissionId === 'build-bell-state' && (
+        <button className="text-action" style={{ marginBottom: 12 }} onClick={() => window.location.assign('/circuit?mission=build-bell-state&boss=entanglement-guardian')}>
+          Challenge the Entanglement Guardian →
         </button>
       )}
 

@@ -21,7 +21,7 @@ Last updated: 2026-10-19. This matrix excludes deployment and live Supabase oper
 | AI mentor | `AITutor.jsx`, `aiTutor.js` | Partially implemented | Input cleanup/unit coverage exists; live provider key deliberately not tested. |
 | Profile/avatar, notifications, artifacts, history, calendar, weekly events | related UI/storage absent or partial | Not implemented | Require a persistence design and authorized database verification; excluded by scope. |
 | Circuit Repair Mission | `CircuitBuilder.jsx`, gamification router | Implemented but unverified | Guided faulty-X scenario loads into the existing editor; a learner must repair it to the exact server-validated superposition circuit before the existing idempotent reward path can succeed. Authenticated persistence is excluded. |
-| Boss battles | Circuit Builder/gamification | Not implemented | Need multi-stage server validators, attempt state, and durable reward policy. |
+| Entanglement Guardian Boss Battle | `CircuitBuilder.jsx`, existing Bell mission | Implemented but unverified | Multi-stage session flow checks H(q0), then CNOT(q0,q1), then requires simulation and the existing server-validated Bell mission. Durable attempts/history remain excluded persistence work. |
 | Instructor workspace | `InstructorDashboard.jsx` | Implemented but unverified | Role/data scope requires authorized workflow. |
 | Accessibility, responsive UI, error handling | shared styles/pages | Partially implemented | Semantics and responsive rules exist; systematic keyboard/manual audit remains. |
 | Frontend automated tests | `src/**/*.test.js` | Unit verified | 26 tests passed on 2026-10-19. |
