@@ -5,10 +5,20 @@ export default function AchievementNotification() {
   const [notification, setNotification] = useState(null);
   const [visible, setVisible] = useState(false);
   const processedAchievements = useRef(new Set());
+  const hasInitialSnapshot = useRef(false);
   const { gamification } = useProgress();
 
   useEffect(() => {
-    const latest = (gamification?.achievements || []).find((achievement) => !processedAchievements.current.has(achievement.id));
+    const achievements = gamification?.achievements || [];
+    // Loading an existing profile is not a new unlock. Establish the first
+    // server snapshot silently so returning learners are not notified again on
+    // every dashboard visit. Subsequent server-confirmed additions are shown.
+    if (!hasInitialSnapshot.current) {
+      achievements.forEach(achievement => processedAchievements.current.add(achievement.id));
+      if (gamification) hasInitialSnapshot.current = true;
+      return undefined;
+    }
+    const latest = achievements.find((achievement) => !processedAchievements.current.has(achievement.id));
     if (!latest) return undefined;
     processedAchievements.current.add(latest.id);
     setNotification(latest);

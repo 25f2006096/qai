@@ -19,6 +19,7 @@ const AdminPanel = lazy(() => import('./pages/Admin/AdminPanel.jsx'));
 const QuantumRace = lazy(() => import('./pages/QuantumRace/QuantumRace.jsx'));
 const InstructorDashboard = lazy(() => import('./pages/Instructor/InstructorDashboard.jsx'));
 const Contests = lazy(() => import('./pages/Contests/Contests.jsx'));
+const WorldMap = lazy(() => import('./pages/WorldMap/WorldMap.jsx'));
 
 function ProtectedRoute({ children, requireAdmin = false }) {
   const { user, loading } = useAuth();
@@ -108,6 +109,7 @@ function MainLayout() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/roadmap" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
+          <Route path="/world-map" element={<ProtectedRoute><WorldMap /></ProtectedRoute>} />
           <Route path="/modules" element={<ProtectedRoute><ModuleList /></ProtectedRoute>} />
           <Route path="/modules/:id" element={<ProtectedRoute><ModuleDetail /></ProtectedRoute>} />
           <Route path="/circuit" element={<ProtectedRoute><CircuitBuilder /></ProtectedRoute>} />

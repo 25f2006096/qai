@@ -75,6 +75,14 @@ Before extending race, contest, or multiplayer behavior, audit each workflow's s
 - Local test runtime: Python 3.14, where importing the installed Cirq/gRPC stack causes a Windows fatal exception during the complete suite.
 - Resolution: run the complete backend suite in a clean Python 3.12 environment matching CI/Docker before changing quantum-library versions or production runtime settings.
 
+## Post-baseline repository changes
+
+| Feature | Status | Date | Evidence |
+| --- | --- | --- | --- |
+| Curriculum World Map | **Unit verified** and **Build verified** | 2026-10-19 | Adds `/world-map`, sidebar navigation, and a dashboard preview. Region access is derived exclusively from persisted completed-module IDs. `npm.cmd test` includes two World Map tests; `npm.cmd run build` completed. |
+| Achievement notifications | **Build verified** | 2026-10-19 | Initial server achievement snapshots are now silent; only later server-confirmed additions create a toast. Manual authenticated verification remains required. |
+| Quantum Race disclosure | **Build verified** | 2026-10-19 | Clearly identifies the existing page as an educational operation-count visualizer, not a multiplayer event or authoritative competition system. |
+
 ## Pre-existing production blockers
 
 1. The Render deployment at `quantum-to3r.onrender.com` returns empty browser Supabase configuration. The service needs `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` configured server-side.

@@ -8,6 +8,7 @@ const NAV = [
   { to: '/contests', icon: '🏁', label: 'Contests' },
   { to: '/dashboard', icon: '🏠', label: 'Dashboard' },
   { to: '/roadmap', icon: '🗺️', label: 'My Roadmap' },
+  { to: '/world-map', icon: '🧭', label: 'World Map' },
   { to: '/modules', icon: '📚', label: 'Modules' },
   { to: '/circuit', icon: '⚡', label: 'Circuit Builder' },
   { to: '/race', icon: '⚔', label: 'Quantum Race' },

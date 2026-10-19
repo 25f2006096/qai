@@ -169,7 +169,12 @@ export default function QuantumRace() {
     <div className="page fade-in">
       <div className="page-header">
         <h1 className="page-title">⚔️ Classical vs. Quantum Race</h1>
-        <p className="page-subtitle">Visualize quantum speedup across 6 landmark quantum algorithms</p>
+        <p className="page-subtitle">An educational complexity visualizer across 6 landmark quantum algorithms</p>
+      </div>
+
+      <div className="card" role="note" style={{ marginBottom: 24, borderLeft: '4px solid var(--info)', padding: '14px 18px' }}>
+        <strong>Learning visualizer</strong>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '.84rem', marginTop: 4 }}>This page compares estimated operation counts. It is not a live multiplayer race, does not submit competition scores, and does not award XP.</p>
       </div>
 
       {/* Algorithm Selector */}

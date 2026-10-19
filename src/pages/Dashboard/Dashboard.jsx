@@ -6,6 +6,7 @@ import { getNextModule } from '../../utils/adaptive.js';
 import { getProgressToNextLevel } from '../../utils/gamification.js';
 import AITutor from '../../components/ai/AITutor.jsx';
 import AchievementNotification from '../../components/gamification/AchievementNotification.jsx';
+import { getWorldMap } from '../../utils/worldMap.js';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -26,8 +27,10 @@ export default function Dashboard() {
   const strongSkills = skills ? Object.entries(skills).filter(([, v]) => v >= 60).sort((a, b) => b[1] - a[1]).slice(0, 3) : [];
 
   const unlockedAchievements = progress ? ACHIEVEMENTS.filter(a => a.condition(progress)) : [];
+  const verifiedAchievements = gamification?.achievements || [];
 
   const recentModules = MODULES.filter(m => progress?.completedModules?.includes(m.id)).slice(-3);
+  const nextRegion = getWorldMap(progress).find(region => region.state === 'available');
 
   return (
     <div className="page fade-in">
@@ -75,8 +78,8 @@ export default function Dashboard() {
           <div className="stat-label">Total XP</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value">{unlockedAchievements.length}</div>
-          <div className="stat-label">Achievements</div>
+          <div className="stat-value">{verifiedAchievements.length}</div>
+          <div className="stat-label">Verified Badges</div>
         </div>
       </div>
 
@@ -140,6 +143,19 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {nextRegion && (
+        <section className="card" style={{ marginBottom: 28, borderLeft: '4px solid var(--accent)' }} aria-labelledby="world-map-preview-heading">
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: '.75rem', color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>Quantum World Map</div>
+              <h2 id="world-map-preview-heading" style={{ fontSize: '1.2rem', margin: '5px 0' }}>{nextRegion.icon} {nextRegion.name}</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '.85rem' }}>{nextRegion.description}</p>
+            </div>
+            <button className="btn btn-secondary" onClick={() => nav('/world-map')}>Open map →</button>
+          </div>
+        </section>
+      )}
+
       <div className="grid grid-2" style={{ marginBottom: 28 }}>
         {/* Knowledge Radar placeholder */}
         <div className="card">
@@ -189,9 +205,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Achievements */}
+        {/* Course milestones */}
         <div className="card">
-          <div style={{ fontWeight: 700, marginBottom: 12, fontSize: '0.9rem' }}>🏆 Recent Achievements</div>
+          <div style={{ fontWeight: 700, marginBottom: 4, fontSize: '0.9rem' }}>📚 Course Milestones</div>
+          <p style={{ color: 'var(--text-muted)', fontSize: '.75rem', marginBottom: 12 }}>Derived from your current curriculum progress. Verified mission badges appear on the Achievements page.</p>
           <div className="grid grid-2">
             {unlockedAchievements.slice(0, 4).map(a => (
               <div key={a.id} className="achievement-badge unlocked">

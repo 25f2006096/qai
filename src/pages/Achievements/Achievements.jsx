@@ -10,7 +10,7 @@ export default function Achievements() {
     <div className="page fade-in">
       <div className="page-header">
         <h1 className="page-title">🏆 Achievements & Badges</h1>
-        <p className="page-subtitle">Unlock badges as you complete tests, modules, and experiments</p>
+        <p className="page-subtitle">Verified badges are awarded by trusted mission validation. Course milestones reflect your current learning progress.</p>
       </div>
 
       {verifiedAchievements.length > 0 && (
@@ -41,7 +41,12 @@ export default function Achievements() {
         </div>
       )}
 
-      <div className="grid grid-3">
+      <section aria-labelledby="course-milestones-heading">
+        <div style={{ marginBottom: 14 }}>
+          <h2 id="course-milestones-heading" style={{ fontSize: '1.05rem' }}>📚 Course milestones</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '.82rem', marginTop: 4 }}>Calculated from your module and learning activity progress; these are not server-verified reward records.</p>
+        </div>
+        <div className="grid grid-3">
         {ACHIEVEMENTS.map(a => {
           const unlocked = progress ? a.condition(progress) : false;
           return (
@@ -57,7 +62,8 @@ export default function Achievements() {
             </div>
           );
         })}
-      </div>
+        </div>
+      </section>
 
       <AITutor />
     </div>

@@ -132,6 +132,20 @@ h3 { font-size: 1.25rem; }
 .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .card-glow { box-shadow: var(--shadow-glow); border-color: rgba(37,99,235,0.2); }
 
+/* Curriculum-derived world map; regions are never unlocked by decorative XP alone. */
+.world-map-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.world-region { background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 20px; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
+.world-region.available { border-color: rgba(37, 99, 235, .45); box-shadow: var(--shadow-sm); }
+.world-region.complete { border-color: rgba(5, 150, 105, .35); }
+.world-region.locked { opacity: .68; background: #f8fafc; }
+.world-region-index { grid-column: 1 / -1; color: var(--text-muted); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.world-region-icon { font-size: 2rem; line-height: 1; }
+.world-region h2 { font-size: 1.05rem; margin-bottom: 5px; }
+.world-region p { color: var(--text-secondary); font-size: .82rem; line-height: 1.55; }
+.world-region-progress { grid-column: 1 / -1; margin-top: 4px; }
+.world-region .text-action, .world-region .tag { grid-column: 1 / -1; justify-self: start; }
+@media (max-width: 720px) { .world-map-grid { grid-template-columns: 1fr; } }
+
 /* Instructor workspace — built from the existing application surfaces and tokens. */
 .instructor-workspace { padding: 36px; max-width: 1540px; margin: 0 auto; }
 .instructor-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
