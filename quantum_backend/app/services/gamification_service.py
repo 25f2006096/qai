@@ -24,6 +24,13 @@ MISSIONS: dict[str, dict[str, Any]] = {
         "estimated_minutes": 10,
         "route": "/circuit?mission=build-bell-state",
     },
+    "build-ghz-state": {
+        "title": "Assemble a 3-qubit GHZ state",
+        "description": "Entangle q0, q1, and q2 into 1/√2(|000⟩ + |111⟩) with H followed by two CNOTs.",
+        "xp_reward": 60,
+        "estimated_minutes": 15,
+        "route": "/circuit?mission=build-ghz-state",
+    },
 }
 
 RANKS = (
@@ -59,8 +66,10 @@ class GamificationStore:
         return {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
 
     async def _request(self, method: str, path: str, **kwargs):
+        headers = self._headers()
+        headers.update(kwargs.pop("headers", {}))
         async with httpx.AsyncClient(timeout=8) as client:
-            response = await client.request(method, f"{settings.supabase_url.rstrip('/')}/rest/v1/{path}", headers=self._headers(), **kwargs)
+            response = await client.request(method, f"{settings.supabase_url.rstrip('/')}/rest/v1/{path}", headers=headers, **kwargs)
         if response.status_code >= 400:
             raise RuntimeError("Gamification storage request failed.")
         return response.json() if response.content else None
@@ -85,6 +94,8 @@ class GamificationStore:
             "next_mission": next((mission for mission in missions if mission["status"] != "completed"), None),
             "achievements": [ACHIEVEMENTS[row["achievement_id"]] | {"id": row["achievement_id"], "unlocked_at": row["unlocked_at"]} for row in achievements or [] if row["achievement_id"] in ACHIEVEMENTS],
             "daily_quests": self._daily_quests(completed or []),
+            "weekly_quests": self._weekly_quests(completed or []),
+            "reward_history": self._reward_history(completed or []),
         }
 
     async def weekly_leaderboard(self, user_id: str) -> dict[str, Any]:
@@ -109,6 +120,44 @@ class GamificationStore:
             "completed": f"daily:circuit:{today}" in today_keys, "xp_reward": 20, "route": "/circuit",
         }]
 
+    @staticmethod
+    def _weekly_quests(rewards: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone.utc)
+        week_start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+        week_rewards = [r for r in rewards if r.get("created_at", "") >= week_start.isoformat()]
+        circuit_missions_this_week = len({r["event_key"] for r in week_rewards if r.get("event_type") == "circuit_mission"})
+        distinct_days = len({str(r.get("created_at", ""))[:10] for r in week_rewards})
+        return [
+            {
+                "id": "weekly-circuits", "quest_type": "complete_circuit_missions_weekly",
+                "title": "Complete 2 circuit missions this week",
+                "description": "Build and submit two distinct circuit missions.",
+                "target_count": 2, "current_count": min(circuit_missions_this_week, 2),
+                "completed": circuit_missions_this_week >= 2, "xp_reward": 40, "route": "/circuit",
+            },
+            {
+                "id": "weekly-active-days", "quest_type": "active_days_weekly",
+                "title": "Learn on 3 different days this week",
+                "description": "Earn verified rewards on at least 3 distinct days.",
+                "target_count": 3, "current_count": min(distinct_days, 3),
+                "completed": distinct_days >= 3, "xp_reward": 50, "route": "/dashboard",
+            },
+        ]
+
+    @staticmethod
+    def _reward_history(rewards: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Return a recent reward history feed (most recent first, max 20)."""
+        sorted_rewards = sorted(rewards, key=lambda r: r.get("created_at", ""), reverse=True)[:20]
+        return [
+            {
+                "event_type": r.get("event_type", ""),
+                "event_key": r.get("event_key", ""),
+                "created_at": r.get("created_at", ""),
+            }
+            for r in sorted_rewards
+        ]
+
     async def award(self, user_id: str, event_type: str, event_key: str) -> dict[str, Any]:
         # The SQL function owns reward amounts and the uniqueness constraint. The
         # browser never supplies an XP value.
@@ -129,4 +178,12 @@ ACHIEVEMENTS = {
     "first-circuit": {"name": "Circuit Explorer", "desc": "Completed your first verified circuit mission.", "icon": "⚛️"},
     "first-contest": {"name": "Quantum Competitor", "desc": "Earned a reward from a qualifying contest solution.", "icon": "🏁"},
     "xp-100": {"name": "Century of Discovery", "desc": "Reached 100 verified XP.", "icon": "💯"},
+    "bell-state": {"name": "Entanglement Pioneer", "desc": "Built a verified Bell state circuit.", "icon": "🔗"},
+    "superposition-master": {"name": "Superposition Master", "desc": "Created a verified superposition circuit.", "icon": "🌊"},
+    "streak-3": {"name": "Consistency Keeper", "desc": "Maintained a 3-day learning streak.", "icon": "🔥"},
+    "streak-7": {"name": "Quantum Marathoner", "desc": "Maintained a 7-day learning streak.", "icon": "⭐"},
+    "xp-500": {"name": "Half Millennium", "desc": "Reached 500 verified XP.", "icon": "🎖️"},
+    "xp-1000": {"name": "Quantum Kilobyte", "desc": "Reached 1000 verified XP.", "icon": "🏅"},
+    "all-missions": {"name": "Mission Complete", "desc": "Completed all available circuit missions.", "icon": "🎯"},
+    "daily-quest-5": {"name": "Quest Apprentice", "desc": "Completed 5 daily quests.", "icon": "📋"},
 }

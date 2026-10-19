@@ -24,6 +24,14 @@ def _matches_mission(mission_id: str, submission: CircuitMissionSubmission) -> b
             and gates[0].get("gate") == "H" and gates[0].get("target") == 0
             and gates[1].get("gate") == "CNOT" and gates[1].get("control") == 0 and gates[1].get("target") == 1
         )
+    if mission_id == "build-ghz-state":
+        # H(q0) followed by CNOT(q0, q1) and CNOT(q0, q2)
+        return (
+            submission.qubits >= 3 and len(gates) == 3
+            and gates[0].get("gate") == "H" and gates[0].get("target") == 0
+            and gates[1].get("gate") == "CNOT" and gates[1].get("control") == 0 and gates[1].get("target") == 1
+            and gates[2].get("gate") == "CNOT" and gates[2].get("control") == 0 and gates[2].get("target") == 2
+        )
     return False
 
 

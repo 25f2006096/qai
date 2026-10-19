@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { EDUCATION_LEVELS, GOALS } from '../../data/modules.js';
 
 export default function LandingPage({ initialMode = 'login' }) {
-  const [mode, setMode] = useState(initialMode); // 'login' or 'register'
+  const [mode, setMode] = useState(initialMode); // 'login' | 'register' | 'forgot-password' | 'update-password'
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -17,11 +17,26 @@ export default function LandingPage({ initialMode = 'login' }) {
   const [regErr, setRegErr] = useState('');
   const [regLoading, setRegLoading] = useState(false);
 
+  // Password reset state
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetMsg, setResetMsg] = useState('');
+  const [resetErr, setResetErr] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+
   // Google loading
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { login, register, signInWithGoogle } = useAuth();
+  const { login, register, signInWithGoogle, resetPassword, updatePassword } = useAuth();
   const nav = useNavigate();
+
+  // Detect recovery flow from URL hash
+  useState(() => {
+    if (window.location.hash?.includes('type=recovery')) {
+      setMode('update-password');
+    }
+  });
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -39,6 +54,53 @@ export default function LandingPage({ initialMode = 'login' }) {
       setLoginErr('An unexpected error occurred. Please try again.');
     } finally {
       setLoginLoading(false);
+    }
+  };
+
+  const handleResetSubmit = async (e) => {
+    e.preventDefault();
+    setResetErr('');
+    setResetMsg('');
+    setResetLoading(true);
+    try {
+      const r = await resetPassword(resetEmail);
+      if (r.error) {
+        setResetErr(r.error);
+      } else {
+        setResetMsg(r.message || 'Password reset email sent! Check your inbox.');
+      }
+    } catch (err) {
+      setResetErr('An unexpected error occurred. Please try again.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleUpdatePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setResetErr('');
+    setResetMsg('');
+    if (newPw.length < 6) {
+      setResetErr('Password must be at least 6 characters long.');
+      return;
+    }
+    if (newPw !== confirmPw) {
+      setResetErr('Passwords do not match.');
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const r = await updatePassword(newPw);
+      if (r.error) {
+        setResetErr(r.error);
+      } else {
+        setResetMsg(r.message || 'Password updated successfully! You can now sign in.');
+        setTimeout(() => setMode('login'), 2000);
+      }
+    } catch (err) {
+      setResetErr('Unable to update password. Please try again.');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -249,9 +311,101 @@ export default function LandingPage({ initialMode = 'login' }) {
                     />
                   </div>
 
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -6, marginBottom: 12 }}>
+                    <button
+                      type="button"
+                      style={{ fontSize: '0.8rem', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      onClick={() => { setMode('forgot-password'); setResetErr(''); setResetMsg(''); }}
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+
                   <button className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 8 }} type="submit" disabled={loginLoading}>
                     {loginLoading ? 'Signing In...' : 'Sign In →'}
                   </button>
+                </form>
+              ) : mode === 'forgot-password' ? (
+                <form className="auth-form" onSubmit={handleResetSubmit}>
+                  <h3 className="auth-form-title">Reset Password 🔐</h3>
+                  <p className="auth-form-desc">Enter your email and we'll send you recovery instructions</p>
+
+                  {resetErr && <div className="tag tag-danger auth-err">{resetErr}</div>}
+                  {resetMsg && <div className="tag tag-success auth-err" style={{ background: 'rgba(34, 197, 94, 0.15)', color: 'var(--success)' }}>{resetMsg}</div>}
+
+                  <div className="form-group">
+                    <label className="form-label">Account Email Address</label>
+                    <input
+                      className="form-input"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={resetEmail}
+                      onChange={e => setResetEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <button className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 8 }} type="submit" disabled={resetLoading}>
+                    {resetLoading ? 'Sending link...' : 'Send Recovery Link →'}
+                  </button>
+
+                  <div style={{ textAlign: 'center', marginTop: 14 }}>
+                    <button
+                      type="button"
+                      style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
+                      onClick={() => setMode('login')}
+                    >
+                      ← Back to Sign In
+                    </button>
+                  </div>
+                </form>
+              ) : mode === 'update-password' ? (
+                <form className="auth-form" onSubmit={handleUpdatePasswordSubmit}>
+                  <h3 className="auth-form-title">New Password 🔑</h3>
+                  <p className="auth-form-desc">Enter a secure new password for your account</p>
+
+                  {resetErr && <div className="tag tag-danger auth-err">{resetErr}</div>}
+                  {resetMsg && <div className="tag tag-success auth-err" style={{ background: 'rgba(34, 197, 94, 0.15)', color: 'var(--success)' }}>{resetMsg}</div>}
+
+                  <div className="form-group">
+                    <label className="form-label">New Password</label>
+                    <input
+                      className="form-input"
+                      type="password"
+                      placeholder="•••••••• (min 6 chars)"
+                      value={newPw}
+                      onChange={e => setNewPw(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Confirm New Password</label>
+                    <input
+                      className="form-input"
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPw}
+                      onChange={e => setConfirmPw(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+
+                  <button className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 8 }} type="submit" disabled={resetLoading}>
+                    {resetLoading ? 'Updating password...' : 'Update Password →'}
+                  </button>
+
+                  <div style={{ textAlign: 'center', marginTop: 14 }}>
+                    <button
+                      type="button"
+                      style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
+                      onClick={() => setMode('login')}
+                    >
+                      ← Back to Sign In
+                    </button>
+                  </div>
                 </form>
               ) : (
                 <form className="auth-form" onSubmit={handleRegSubmit}>

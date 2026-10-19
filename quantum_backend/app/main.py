@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse, FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import admin, health, quantum, ibm, jobs, contests, gamification
+from app.routers import admin, health, quantum, ibm, jobs, contests, gamification, notifications, challenges
 
 
 app = FastAPI(
@@ -45,6 +45,8 @@ app.include_router(jobs.router)
 app.include_router(contests.router)
 app.include_router(admin.router)
 app.include_router(gamification.router)
+app.include_router(notifications.router)
+app.include_router(challenges.router)
 
 
 @app.get("/api/content/topics")

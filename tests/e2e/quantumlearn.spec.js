@@ -43,16 +43,28 @@ test.describe('QuantumLearn browser E2E suite', () => {
   });
 
   test('unauthenticated users are redirected away from protected sections', async ({ page }) => {
-    await page.goto('/dashboard');
-    await expect(page).toHaveURL(/\/login|\/$/);
-    await expect(page.getByRole('heading', { name: /Welcome Back/i })).toBeVisible();
+    for (const route of ['/dashboard', '/profile', '/notifications', '/circuit', '/lab']) {
+      await page.goto(route);
+      await expect(page).toHaveURL(/\/login|\/$/);
+      await expect(page.getByRole('heading', { name: /Welcome Back/i })).toBeVisible();
+    }
   });
 
-  test('auth form is present for email sign-in', async ({ page }) => {
+  test('auth form supports login and forgot password transitions', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByPlaceholder('you@example.com')).toBeVisible();
     await expect(page.getByPlaceholder('••••••••')).toBeVisible();
     await expect(page.getByRole('button', { name: /Sign In →/i })).toBeVisible();
+
+    // Click forgot password
+    await page.getByRole('button', { name: /Forgot password\?/i }).click();
+    await expect(page.getByRole('heading', { name: /Reset Password/i })).toBeVisible();
+    await expect(page.getByPlaceholder('you@example.com')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Send Recovery Link →/i })).toBeVisible();
+
+    // Switch back to login
+    await page.getByRole('button', { name: /← Back to Sign In/i }).click();
+    await expect(page.getByRole('heading', { name: /Welcome Back/i })).toBeVisible();
   });
 
   test('backend health and capabilities endpoints respond', async ({ request }) => {

@@ -15,11 +15,22 @@ def test_circuit_mission_validation_requires_the_learning_objective():
         {"gate": "H", "target": 0, "col": 0},
         {"gate": "CNOT", "control": 0, "target": 1, "col": 1},
     ])
+    ghz = CircuitMissionSubmission(qubits=3, operations=[
+        {"gate": "H", "target": 0, "col": 0},
+        {"gate": "CNOT", "control": 0, "target": 1, "col": 1},
+        {"gate": "CNOT", "control": 0, "target": 2, "col": 2},
+    ])
+    incomplete_ghz = CircuitMissionSubmission(qubits=3, operations=[
+        {"gate": "H", "target": 0, "col": 0},
+        {"gate": "CNOT", "control": 0, "target": 1, "col": 1},
+    ])
     assert _matches_mission("build-superposition", superposition)
     assert not _matches_mission("build-superposition", noisy_superposition)
     assert not _matches_mission("build-bell-state", incomplete_bell)
     assert not _matches_mission("build-bell-state", reversed_bell)
     assert _matches_mission("build-bell-state", bell)
+    assert _matches_mission("build-ghz-state", ghz)
+    assert not _matches_mission("build-ghz-state", incomplete_ghz)
 
 
 def test_level_progress_uses_the_documented_formula():

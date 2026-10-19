@@ -20,6 +20,8 @@ const QuantumRace = lazy(() => import('./pages/QuantumRace/QuantumRace.jsx'));
 const InstructorDashboard = lazy(() => import('./pages/Instructor/InstructorDashboard.jsx'));
 const Contests = lazy(() => import('./pages/Contests/Contests.jsx'));
 const WorldMap = lazy(() => import('./pages/WorldMap/WorldMap.jsx'));
+const Profile = lazy(() => import('./pages/Profile/Profile.jsx'));
+const Notifications = lazy(() => import('./pages/Notifications/Notifications.jsx'));
 
 function ProtectedRoute({ children, requireAdmin = false }) {
   const { user, loading } = useAuth();
@@ -116,6 +118,8 @@ function MainLayout() {
           <Route path="/lab" element={<ProtectedRoute><QuantumLab /></ProtectedRoute>} />
           <Route path="/skillmap" element={<ProtectedRoute><SkillMap /></ProtectedRoute>} />
           <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           <Route path="/race" element={<ProtectedRoute><QuantumRace /></ProtectedRoute>} />
           <Route path="/contests" element={<ProtectedRoute><Contests /></ProtectedRoute>} />
           <Route path="/contests/:contestId" element={<ProtectedRoute><Contests /></ProtectedRoute>} />

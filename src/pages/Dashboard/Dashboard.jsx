@@ -18,6 +18,8 @@ export default function Dashboard() {
   const nextMod = progress && skills ? getNextModule(progress, skills, user?.goal) : null;
   const completedCount = progress?.completedModules?.length || 0;
   const dailyQuests = gamification?.daily_quests || [];
+  const weeklyQuests = gamification?.weekly_quests || [];
+  const rewardHistory = gamification?.reward_history || [];
   const loadingQuests = false;
   const [weeklyBoard, setWeeklyBoard] = useState(null);
 
@@ -124,14 +126,17 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Daily Quests */}
+        {/* Quests (Daily & Weekly) */}
         <div className="card">
-          <div style={{ fontSize: '0.75rem', color: 'var(--accent-light)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>📋 Daily Quests</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--accent-light)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>📋 Active Quests</div>
+            <span className="tag tag-info" style={{ fontSize: '0.7rem' }}>Daily & Weekly</span>
+          </div>
           {loadingQuests ? (
             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Loading quests...</div>
-          ) : dailyQuests.length > 0 ? (
+          ) : (dailyQuests.length > 0 || weeklyQuests.length > 0) ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {dailyQuests.map(quest => (
+              {[...dailyQuests, ...weeklyQuests].map(quest => (
                 <button key={quest.id} type="button" onClick={() => quest.route && nav(quest.route)} style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-glass)', border: '1px solid var(--border-glass)', borderRadius: 8, color: 'inherit', textAlign: 'left', cursor: quest.route ? 'pointer' : 'default' }}>
                   <div>
                     <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{quest.title}</div>
@@ -170,19 +175,44 @@ export default function Dashboard() {
         </section>
       )}
 
-      <section className="card" style={{ marginBottom: 28 }} aria-labelledby="weekly-learning-board-heading">
-        <h2 id="weekly-learning-board-heading" style={{ fontSize: '1rem', margin: 0 }}>Weekly learning leaderboard</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '.76rem', margin: '4px 0 10px' }}>Ranks verified learning XP earned this UTC week. Contest ratings are separate.</p>
-        {weeklyBoard?.entries?.length ? (
-          <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
-            {weeklyBoard.entries.slice(0, 5).map(entry => (
-              <li key={entry.user_id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr auto', gap: 10, alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-glass)' }}>
-                <strong>#{entry.rank}</strong><span>{entry.display_name}{entry.is_viewer ? ' (you)' : ''}</span><span style={{ color: 'var(--accent)', fontWeight: 700 }}>{entry.weekly_xp} XP</span>
-              </li>
-            ))}
-          </ol>
-        ) : <p style={{ color: 'var(--text-muted)', fontSize: '.84rem', margin: 0 }}>The verified weekly leaderboard is unavailable until its database migration is applied and the service is configured.</p>}
-      </section>
+      <div className="grid grid-2" style={{ marginBottom: 28 }}>
+        <section className="card" aria-labelledby="weekly-learning-board-heading">
+          <h2 id="weekly-learning-board-heading" style={{ fontSize: '1rem', margin: 0 }}>Weekly learning leaderboard</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '.76rem', margin: '4px 0 10px' }}>Ranks verified learning XP earned this UTC week. Contest ratings are separate.</p>
+          {weeklyBoard?.entries?.length ? (
+            <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
+              {weeklyBoard.entries.slice(0, 5).map(entry => (
+                <li key={entry.user_id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr auto', gap: 10, alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-glass)' }}>
+                  <strong>#{entry.rank}</strong><span>{entry.display_name}{entry.is_viewer ? ' (you)' : ''}</span><span style={{ color: 'var(--accent)', fontWeight: 700 }}>{entry.weekly_xp} XP</span>
+                </li>
+              ))}
+            </ol>
+          ) : <p style={{ color: 'var(--text-muted)', fontSize: '.84rem', margin: 0 }}>The verified weekly leaderboard is unavailable until its database migration is applied and the service is configured.</p>}
+        </section>
+
+        <section className="card" aria-labelledby="reward-history-heading">
+          <h2 id="reward-history-heading" style={{ fontSize: '1rem', margin: 0 }}>⚡ Verified Reward Feed</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '.76rem', margin: '4px 0 10px' }}>Server-confirmed learning accomplishments and XP transactions.</p>
+          {rewardHistory.length > 0 ? (
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
+              {rewardHistory.slice(0, 5).map((r, i) => (
+                <li key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-glass)', fontSize: '0.82rem' }}>
+                  <span>
+                    <strong style={{ textTransform: 'capitalize' }}>{r.event_type.replace('_', ' ')}</strong>: {r.event_key}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+                    {r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recent'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{ color: 'var(--text-muted)', fontSize: '.84rem', margin: 0 }}>
+              No verified rewards recorded yet. Complete a circuit mission or contest challenge to earn server-verified rewards.
+            </p>
+          )}
+        </section>
+      </div>
 
       <div className="grid grid-2" style={{ marginBottom: 28 }}>
         {/* Knowledge Radar placeholder */}

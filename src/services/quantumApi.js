@@ -89,6 +89,17 @@ export const submitCircuitMission = (missionId, payload) => request(
   { method: 'POST', body: JSON.stringify(payload) },
 );
 
+export const getNotifications = () => request('/api/notifications');
+export const markNotificationRead = (notificationId = null, all = false) => request('/api/notifications/read', {
+  method: 'POST',
+  body: JSON.stringify({ notification_id: notificationId, all }),
+});
+export const getChallengeProgress = (challengeId) => request(`/api/challenges/${encodeURIComponent(challengeId)}`);
+export const saveChallengeProgress = (challengeId, payload) => request(`/api/challenges/${encodeURIComponent(challengeId)}`, {
+  method: 'PUT',
+  body: JSON.stringify({ challenge_id: challengeId, ...payload }),
+});
+
 export const adminApi = {
   dashboard: () => request('/api/admin/dashboard'),
   settings: () => request('/api/admin/settings'),

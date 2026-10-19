@@ -1,34 +1,46 @@
 # QuantumLearn feature completion matrix
 
-Last updated: 2026-10-19. This matrix excludes deployment and live Supabase operations at the user's request. A feature that requires cross-device persistence is not reported as verified without that environment.
+Last updated: 2026-10-19
 
-| Feature | Location | Status | Evidence / remaining acceptance criterion |
-| --- | --- | --- | --- |
-| Authentication and protected routes | `src/context/AuthContext.jsx`, `src/App.jsx` | Implemented but unverified | Supabase Auth workflow needs an authorized browser session. |
-| Dashboard and roadmap | `src/pages/Dashboard`, `src/pages/Roadmap` | Implemented but unverified | Build passes; authenticated data loading remains unverified. |
-| Curriculum and knowledge assessment | `src/pages/Module`, `src/pages/KnowledgeTest` | Partially implemented | Local progression exists; cross-device persistence excluded. |
-| XP, levels, and ranks | `gamification_service.py`, `src/utils/gamification.js` | Unit verified | Shared level formula and rank titles are covered by frontend/backend tests. |
-| Secure reward issuance | `gamification.py`, migration 15 | Partially implemented | Server validates two circuit missions and contest rewards; live database verification excluded. |
-| Daily quests and achievements | gamification summary, dashboard | Implemented but unverified | Uses server summary; daily quest persistence needs excluded database environment. |
-| Weekly leaderboard | migration 16, gamification API, dashboard | Implemented but unverified | Server-owned aggregation is coded; migration application intentionally excluded. |
-| World Map and story chapters | `src/utils/worldMap.js`, `src/pages/WorldMap` | Unit verified | Seven chapters cover modules 1–24 exactly once; 3 focused tests pass. |
-| Skill Map and accessible Skill Tree | `SkillMap.jsx`, `skillTree.js` | Unit verified | Tree maps real curriculum modules and prerequisite estimates; verified evidence persistence remains excluded. |
-| Circuit Builder and local simulation | `CircuitBuilder.jsx`, `quantum.js` | Unit verified | Gate/state tests pass; provider-backed workflow needs environment verification. |
-| Verified circuit missions | gamification router/tests | Unit verified | Exact superposition and Bell circuit order is server-validated; reward persistence excluded. |
-| Quantum Lab and visualizations | `QuantumLab.jsx`, `BlochSphere.jsx` | Implemented but unverified | Build passes; configured provider testing is outstanding. |
-| Quantum Race | `QuantumRace.jsx` | Implemented but unverified | Correctly labelled educational operation-count visualizer, not multiplayer competition. |
-| Contests and admin contest management | contest/admin routers and pages | Implemented but unverified | Requires authenticated database-backed contest workflow. |
-| AI mentor | `AITutor.jsx`, `aiTutor.js` | Partially implemented | Input cleanup/unit coverage exists; live provider key deliberately not tested. |
-| Profile/avatar, notifications, artifacts, history, calendar, weekly events | related UI/storage absent or partial | Not implemented | Require a persistence design and authorized database verification; excluded by scope. |
-| Circuit Repair Mission | `CircuitBuilder.jsx`, gamification router | Implemented but unverified | Guided faulty-X scenario loads into the existing editor; a learner must repair it to the exact server-validated superposition circuit before the existing idempotent reward path can succeed. Authenticated persistence is excluded. |
-| Entanglement Guardian Boss Battle | `CircuitBuilder.jsx`, existing Bell mission | Implemented but unverified | Multi-stage session flow checks H(q0), then CNOT(q0,q1), then requires simulation and the existing server-validated Bell mission. Durable attempts/history remain excluded persistence work. |
-| Instructor workspace | `InstructorDashboard.jsx` | Implemented but unverified | Role/data scope requires authorized workflow. |
-| Accessibility, responsive UI, error handling | shared styles/pages | Partially implemented | Semantics and responsive rules exist; systematic keyboard/manual audit remains. |
-| Frontend automated tests | `src/**/*.test.js` | Unit verified | 26 tests passed on 2026-10-19. |
-| Backend automated tests | `quantum_backend/tests` | Partially verified | Focused gamification tests pass; full suite requires Python 3.12, not installed. |
+**Status terms:** *Implemented and verified* means verified locally through automated tests or a real local browser workflow. *Implemented but unverified* means code exists but requires Supabase, credentials, or an approved deployed environment. *Blocked by configuration* identifies missing external configuration, not a completed workflow.
 
-## Excluded work
+| Feature | Primary location | Frontend | Backend / database | Tests and verification | Status / exact blocker |
+| --- | --- | --- | --- | --- | --- |
+| Email/password auth, protected routes, refresh, logout | `AuthContext.jsx`, `App.jsx`, Landing | Implemented | Supabase Auth | Public redirect E2E passed; auth E2E skipped | Implemented but unverified — requires Supabase config + test learner |
+| Google OAuth | `AuthContext.jsx` | Implemented | Supabase provider config | Not executable locally | Blocked by configuration — provider client and redirect URL need configuration |
+| Password recovery/update | `AuthContext.jsx`, `LandingPage.jsx` | Implemented | Supabase Auth recovery | Build/test verified | Implemented but unverified — needs a configured auth project/email delivery |
+| Profile, preferences, avatar | `Profile.jsx`, `storage.js` | Implemented | Existing profile RPC/Auth metadata/avatar storage | Build/test verified | Implemented but unverified — avatar bucket/RLS and persistence need live validation |
+| Learning progress / assessments | `ProgressContext.jsx`, `storage.js` | Implemented | Supabase progress tables/RPCs | Existing unit coverage/build | Implemented but unverified — needs authenticated persistence journey |
+| RLS / profile authorization | migrations 02/04 | Configured in SQL | RLS and narrow profile RPCs | Static review only | Blocked by configuration — must test against approved Supabase project |
+| Trusted XP, levels, ranks | `gamification_service.py`, migration 15 | Displayed | SQL reward RPC is authoritative | Level and mission unit tests pass | Implemented but unverified — migration 15 must be applied |
+| Rewards / duplicate prevention | migration 15/17 | No client XP input | Unique reward constraint and service-role RPC | Static/unit behavior verified | Implemented but unverified — concurrency test needs test database |
+| Daily + weekly quests | `gamification_service.py`, `Dashboard.jsx` | Implemented | Derived from trusted reward history | Build verified | Implemented but unverified — quest persistence/reward policy needs migration/live test |
+| Streaks / streak calendar | existing profile/activity UI | Displayed | Existing profile fields; new logic not yet migrated | Not end-to-end tested | Partially implemented — trusted streak-update rules require approved schema/RPC work |
+| Achievements | `Achievements.jsx`, service catalogue, migration 15/17 | Implemented | SQL award flow | Build/unit verified | Implemented but unverified — migration 15/17 required |
+| Notifications | `Notifications.jsx`, notification router, migration 17 | Implemented | RLS notification table prepared | Build verified | Blocked by authorization — migration 17 not applied |
+| Reward/activity history | dashboard + gamification service | Implemented | Derived from reward records | Build verified | Implemented but unverified — reward table required |
+| World Map | `WorldMap.jsx`, `worldMap.js` | Implemented | Based on persisted modules | 3 focused unit tests pass | Implemented and verified locally |
+| Skill Tree / adaptive recommendations | `SkillMap.jsx`, `skillTree.js`, `adaptive.js` | Implemented | Evidence derives from saved progress | Focused unit tests pass | Implemented and verified locally for deterministic rules; live evidence unverified |
+| Circuit Builder and simulator | `CircuitBuilder.jsx`, `quantum.js` | Implemented | Local simulator + protected backend execution | Quantum unit/API tests and E2E Qiskit execution pass | Implemented and verified locally |
+| Circuit repair missions | `CircuitBuilder.jsx`, gamification router | Three guided scenarios | Server validates target operations | Backend mission test passes | Implemented and verified locally; XP persistence awaits migration |
+| Boss battles / save-resume | `CircuitBuilder.jsx`, migration 17 | Bell + GHZ boss workflows | Saved challenge table prepared | Build verified | Partially implemented — durable resume blocked pending migration 17 |
+| Quantum Lab | `QuantumLab.jsx` | Existing controls/presets/results | Local/back-end execution paths | Backend framework tests pass | Implemented and verified locally for frameworks; hardware/provider state unverified |
+| Qiskit, Cirq, PennyLane | backend execution services | Exposed through Lab/API | Tested local execution | 41 backend tests pass | Implemented and verified locally |
+| IBM Quantum / qBraid | `ibm_service.py`, `qbraid_service.py` | Existing UI | Provider secrets required | Failure paths covered; no real credential | Blocked by configuration |
+| Weekly leaderboard | migration 16, API/dashboard | Implemented | Server-owned Postgres aggregation | Build verified | Blocked by authorization — migration 16 needs approved application |
+| Quantum Race | `QuantumRace.jsx` | Implemented | Educational visualizer only | Build verified | Implemented but unverified — manual assumptions review remains |
+| Contest learner/admin workflows | contests/admin routers/pages | Implemented | Server-side scoring, roles | Backend tests pass | Implemented but unverified — requires Supabase contest data + test roles |
+| Weekly events | quest/contest infrastructure | No dedicated UI | No event data model | None | Not implemented — should reuse contest/challenge infrastructure after product rules are approved |
+| AI mentor | `AITutor.jsx`, Supabase Edge Function | Implemented with safe fallback | Groq secret remains server-side | Content-cleaning unit tests pass | Implemented but unverified — live provider key/function needed |
+| Instructor workspace | `InstructorDashboard.jsx` | Implemented | Existing role and RPC design | Build/backend admin tests | Implemented but unverified — authorized instructor test required |
+| Admin dashboard | `AdminPanel.jsx`, admin router | Implemented | Role-validated operations | 8 admin backend tests pass | Implemented and verified locally for API tests; database/RLS integration remains unverified |
+| Accessibility/responsiveness | shared pages/styles | Partial | N/A | Basic semantic controls exist | Partially implemented — manual keyboard/mobile audit required |
+| Frontend tests | `src/**/*.test.js` | N/A | N/A | **26 passed** | Implemented and verified locally |
+| Backend tests | `quantum_backend/tests` | N/A | N/A | **41 passed** | Implemented and verified locally |
+| Public E2E | `tests/e2e` | N/A | Local FastAPI/Vite | **4 passed** | Implemented and verified locally |
+| Authenticated E2E | `tests/e2e` | N/A | Requires Supabase test account | **8 skipped** | Blocked by configuration — `E2E_EMAIL` and `E2E_PASSWORD` absent |
+| Render production runtime | `render.yaml`, Dockerfile | N/A | Requires Render access | Not deployed/tested | Blocked by authorization |
 
-- Applying or verifying Supabase migrations and RLS.
-- Runtime configuration, Render changes, or production deployment.
-- Claims of persistence, Google OAuth, provider, or end-to-end verification without an authorized environment.
+## Migration / external-service gate
+
+No database migration was applied and no production deployment was performed in this work session. Apply migrations only in an approved Supabase environment after reading `DATABASE_MIGRATIONS.md`. Use `DEPLOYMENT_CHECKLIST.md` before a Render release.

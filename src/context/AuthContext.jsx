@@ -226,11 +226,13 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  // Update user profile safely via RPC functions
+  // Update user profile safely via RPC functions & user metadata
   const updateUser = async (updates) => {
     if (!user) return;
 
     if (!supabase) {
+      const updated = { ...user, ...updates };
+      setUser(updated);
       return;
     }
 
@@ -241,6 +243,15 @@ export function AuthProvider({ children }) {
           p_avatar_url: updates.avatar_url || null,
         });
         if (error) console.error('Failed to update profile:', error.message);
+      }
+
+      if (updates.education !== undefined || updates.goal !== undefined || updates.name !== undefined || updates.avatar_url !== undefined) {
+        const metadataUpdates = {};
+        if (updates.education !== undefined) metadataUpdates.education = updates.education;
+        if (updates.goal !== undefined) metadataUpdates.goal = updates.goal;
+        if (updates.name !== undefined) metadataUpdates.full_name = updates.name;
+        if (updates.avatar_url !== undefined) metadataUpdates.avatar_url = updates.avatar_url;
+        await supabase.auth.updateUser({ data: metadataUpdates }).catch(err => console.warn('Metadata update notice:', err.message));
       }
 
       if (updates.knowledgeTestDone !== undefined || updates.knowledgeScore !== undefined) {
@@ -258,8 +269,38 @@ export function AuthProvider({ children }) {
     setUser(updated);
   };
 
+  // Password reset request
+  const resetPassword = async (email) => {
+    if (!supabase) {
+      return { error: 'Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable password recovery.' };
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/login#type=recovery`,
+      });
+      if (error) return { error: error.message };
+      return { success: true, message: 'Password recovery email sent! Please check your inbox for instructions.' };
+    } catch (err) {
+      return { error: err.message || 'Unable to send password recovery email.' };
+    }
+  };
+
+  // Update password (for recovery sessions or user settings)
+  const updatePassword = async (newPassword) => {
+    if (!supabase) {
+      return { error: 'Supabase is not configured.' };
+    }
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) return { error: error.message };
+      return { success: true, message: 'Password has been successfully updated.' };
+    } catch (err) {
+      return { error: err.message || 'Unable to update password.' };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, logout, updateUser, refreshUser, signInWithGoogle }}>
+    <AuthContext.Provider value={{ user, loading, register, login, logout, updateUser, refreshUser, signInWithGoogle, resetPassword, updatePassword }}>
       {children}
     </AuthContext.Provider>
   );
@@ -267,6 +308,6 @@ export function AuthProvider({ children }) {
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) return { user: null, loading: true, register: async () => ({}), login: async () => ({}), logout: async () => { }, updateUser: async () => { }, refreshUser: async () => null, signInWithGoogle: async () => ({}) };
+  if (!ctx) return { user: null, loading: true, register: async () => ({}), login: async () => ({}), logout: async () => { }, updateUser: async () => { }, refreshUser: async () => null, signInWithGoogle: async () => ({}), resetPassword: async () => ({}), updatePassword: async () => ({}) };
   return ctx;
 };
