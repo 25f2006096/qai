@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useProgress } from '../../context/ProgressContext.jsx';
 import { MODULES, SKILL_LABELS, ACHIEVEMENTS } from '../../data/modules.js';
 import { getNextModule } from '../../utils/adaptive.js';
 import { getProgressToNextLevel } from '../../utils/gamification.js';
+import { getWeeklyLeaderboard } from '../../services/quantumApi.js';
 import AITutor from '../../components/ai/AITutor.jsx';
 import AchievementNotification from '../../components/gamification/AchievementNotification.jsx';
 import { getWorldMap } from '../../utils/worldMap.js';
@@ -17,6 +19,7 @@ export default function Dashboard() {
   const completedCount = progress?.completedModules?.length || 0;
   const dailyQuests = gamification?.daily_quests || [];
   const loadingQuests = false;
+  const [weeklyBoard, setWeeklyBoard] = useState(null);
 
   // Gamification state with safe defaults
   const totalXP = gamification?.total_xp ?? user?.total_xp ?? 0;
@@ -32,6 +35,16 @@ export default function Dashboard() {
   const recentModules = MODULES.filter(m => progress?.completedModules?.includes(m.id)).slice(-3);
   const nextRegion = getWorldMap(progress).find(region => region.state === 'available');
 
+  useEffect(() => {
+    let active = true;
+    getWeeklyLeaderboard().then(response => {
+      if (active) setWeeklyBoard(response?.leaderboard || null);
+    }).catch(() => {
+      if (active) setWeeklyBoard(null);
+    });
+    return () => { active = false; };
+  }, []);
+
   return (
     <div className="page fade-in">
       {/* Header */}
@@ -44,7 +57,7 @@ export default function Dashboard() {
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Level</div>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent)' }}>{level}</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{totalXP} XP</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{gamification?.level?.name || 'Quantum Initiate'} · {totalXP} verified XP</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Streak</div>
@@ -121,7 +134,8 @@ export default function Dashboard() {
               {dailyQuests.map(quest => (
                 <button key={quest.id} type="button" onClick={() => quest.route && nav(quest.route)} style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-glass)', border: '1px solid var(--border-glass)', borderRadius: 8, color: 'inherit', textAlign: 'left', cursor: quest.route ? 'pointer' : 'default' }}>
                   <div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{quest.quest_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{quest.title}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{quest.description}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{quest.current_count} / {quest.target_count}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -155,6 +169,20 @@ export default function Dashboard() {
           </div>
         </section>
       )}
+
+      <section className="card" style={{ marginBottom: 28 }} aria-labelledby="weekly-learning-board-heading">
+        <h2 id="weekly-learning-board-heading" style={{ fontSize: '1rem', margin: 0 }}>Weekly learning leaderboard</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '.76rem', margin: '4px 0 10px' }}>Ranks verified learning XP earned this UTC week. Contest ratings are separate.</p>
+        {weeklyBoard?.entries?.length ? (
+          <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
+            {weeklyBoard.entries.slice(0, 5).map(entry => (
+              <li key={entry.user_id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr auto', gap: 10, alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-glass)' }}>
+                <strong>#{entry.rank}</strong><span>{entry.display_name}{entry.is_viewer ? ' (you)' : ''}</span><span style={{ color: 'var(--accent)', fontWeight: 700 }}>{entry.weekly_xp} XP</span>
+              </li>
+            ))}
+          </ol>
+        ) : <p style={{ color: 'var(--text-muted)', fontSize: '.84rem', margin: 0 }}>The verified weekly leaderboard is unavailable until its database migration is applied and the service is configured.</p>}
+      </section>
 
       <div className="grid grid-2" style={{ marginBottom: 28 }}>
         {/* Knowledge Radar placeholder */}

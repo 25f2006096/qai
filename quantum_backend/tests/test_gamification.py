@@ -17,4 +17,5 @@ def test_circuit_mission_validation_requires_the_learning_objective():
 
 def test_level_progress_uses_the_documented_formula():
     assert level_for_xp(100)["number"] == 2
+    assert level_for_xp(100)["name"] == "Qubit Explorer"
     assert level_for_xp(100)["progress_percent"] == 0

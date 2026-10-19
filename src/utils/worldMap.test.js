@@ -16,6 +16,14 @@ test('world map reports genuine completion counts from stored module progress', 
   const map = getWorldMap({ completedModules: [1, 2, 3] });
   assert.equal(map[0].progress, 100);
   assert.equal(map[1].completedCount, 1);
-  assert.equal(map[1].totalCount, 2);
-  assert.equal(map[1].progress, 50);
+  assert.equal(map[1].totalCount, 1);
+  assert.equal(map[1].progress, 100);
+  assert.equal(map[2].state, 'available');
+});
+
+test('world map defines all seven curriculum chapters without duplicate modules', () => {
+  const map = getWorldMap({ completedModules: [] });
+  const mappedIds = map.flatMap(region => region.modules.map(module => module.id));
+  assert.equal(map.length, 7);
+  assert.deepEqual(mappedIds, Array.from({ length: 24 }, (_, index) => index + 1));
 });

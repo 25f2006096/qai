@@ -82,6 +82,9 @@ Before extending race, contest, or multiplayer behavior, audit each workflow's s
 | Curriculum World Map | **Unit verified** and **Build verified** | 2026-10-19 | Adds `/world-map`, sidebar navigation, and a dashboard preview. Region access is derived exclusively from persisted completed-module IDs. `npm.cmd test` includes two World Map tests; `npm.cmd run build` completed. |
 | Achievement notifications | **Build verified** | 2026-10-19 | Initial server achievement snapshots are now silent; only later server-confirmed additions create a toast. Manual authenticated verification remains required. |
 | Quantum Race disclosure | **Build verified** | 2026-10-19 | Clearly identifies the existing page as an educational operation-count visualizer, not a multiplayer event or authoritative competition system. |
+| Seven-region World Map | **Unit verified** and **Build verified** | 2026-10-19 | The map now covers all 24 existing modules exactly once across seven curriculum chapters. Unlock state is derived from completed module IDs. `npm.cmd test` includes three World Map checks. |
+| Rank titles and Skill Tree | **Unit verified** and **Build verified** | 2026-10-19 | Client and backend use the same documented XP-to-level formula and rank sequence. The Skill Tree maps skills to existing modules and prerequisite evidence, and explicitly labels score-based mastery as an estimate. |
+| Weekly learning leaderboard | **Implemented but not fully verified** | 2026-10-19 | API and dashboard UI use server-owned aggregation. Requires reviewed migration `16_gamification_leaderboard.sql`, backend service-role configuration, and an authenticated integration test; it never calculates rankings in the browser. |
 
 ## Pre-existing production blockers
 
@@ -89,6 +92,7 @@ Before extending race, contest, or multiplayer behavior, audit each workflow's s
 2. The deployed frontend bundle does not include the current XP/quest/achievement UI, although the live FastAPI gamification route is present. Render must deploy the latest intended repository and branch, then build with cache cleared.
 3. The connected Supabase project does not yet contain `gamification_rewards`, `gamification_achievements`, or `award_gamification_reward`; migration 15 must be applied in an approved environment before verified rewards can work.
 4. Supabase's current Data API behavior may require newly created public tables to be explicitly exposed and granted to the intended role. After applying migration 15, verify the backend service-role REST calls can reach the two gamification tables; keep browser `anon` and `authenticated` access revoked.
+5. The weekly leaderboard requires migration 16 after migration 15 is confirmed. It exposes only rank, display name, verified weekly XP, and whether a row belongs to the viewer; contest ratings remain separate.
 
 ## Implementation rules
 

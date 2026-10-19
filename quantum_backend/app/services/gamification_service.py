@@ -26,6 +26,17 @@ MISSIONS: dict[str, dict[str, Any]] = {
     },
 }
 
+RANKS = (
+    "Quantum Initiate",
+    "Qubit Explorer",
+    "Superposition Specialist",
+    "Quantum Gate Engineer",
+    "Entanglement Researcher",
+    "Circuit Architect",
+    "Quantum Algorithm Master",
+    "Quantum Pioneer",
+)
+
 
 def level_for_xp(total_xp: int) -> dict[str, Any]:
     number = math.floor(math.sqrt(max(0, total_xp) / 100)) + 1
@@ -33,7 +44,8 @@ def level_for_xp(total_xp: int) -> dict[str, Any]:
     next_threshold = number ** 2 * 100
     return {
         "number": number,
-        "name": f"Level {number}",
+        "name": RANKS[min(number - 1, len(RANKS) - 1)],
+        "label": f"Level {number}",
         "progress_percent": min(100, round((total_xp - current_floor) / (next_threshold - current_floor) * 100)),
         "next_threshold": next_threshold,
     }
@@ -74,6 +86,16 @@ class GamificationStore:
             "achievements": [ACHIEVEMENTS[row["achievement_id"]] | {"id": row["achievement_id"], "unlocked_at": row["unlocked_at"]} for row in achievements or [] if row["achievement_id"] in ACHIEVEMENTS],
             "daily_quests": self._daily_quests(completed or []),
         }
+
+    async def weekly_leaderboard(self, user_id: str) -> dict[str, Any]:
+        """Return only the privacy-safe fields produced by the server-side RPC.
+
+        Aggregation is deliberately performed in Postgres rather than in the
+        browser so clients cannot choose their own XP totals or rank.
+        """
+        rows = await self._request("POST", "rpc/learning_weekly_leaderboard", json={"p_viewer_id": user_id})
+        rows = rows or []
+        return {"metric": "verified XP earned this UTC week", "period": "week", "entries": rows[:20]}
 
     @staticmethod
     def _daily_quests(rewards: list[dict[str, Any]]) -> list[dict[str, Any]]:

@@ -41,6 +41,14 @@ export const getProgressToNextLevel = (xp) => {
   };
 };
 
+export const RANK_TITLES = [
+  'Quantum Initiate', 'Qubit Explorer', 'Superposition Specialist',
+  'Quantum Gate Engineer', 'Entanglement Researcher', 'Circuit Architect',
+  'Quantum Algorithm Master', 'Quantum Pioneer',
+];
+
+export const getRankTitle = (xp) => RANK_TITLES[Math.min(getLevelFromXP(xp) - 1, RANK_TITLES.length - 1)];
+
 // ==========================================
 // MISSION HELPERS
 // ==========================================

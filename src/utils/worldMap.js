@@ -1,12 +1,48 @@
 import { MODULES } from '../data/modules.js';
 
 export const WORLD_REGIONS = [
-  { id: 'qubit-village', name: 'Qubit Village', icon: '⚛️', range: [1, 2], description: 'Build a grounding in probability, vectors, and quantum states.' },
-  { id: 'superposition-valley', name: 'Superposition Valley', icon: '〰️', range: [3, 4], description: 'Use gates and discover how entanglement emerges.' },
-  { id: 'gate-workshop', name: 'Quantum Gate Workshop', icon: '⚙️', range: [5, 7], description: 'Design circuits, reason about measurement, and run Qiskit programs.' },
-  { id: 'algorithm-citadel', name: 'Algorithm Citadel', icon: '🏛️', range: [8, 10], description: 'Explore the SDK ecosystem and foundational quantum algorithms.' },
-  { id: 'frontier-labs', name: 'Quantum Frontier Labs', icon: '🔬', range: [11, 16], description: 'Apply quantum ideas to learning, noise, hardware, and capstone work.' },
-  { id: 'research-frontier', name: 'Advanced Quantum Frontier', icon: '🚀', range: [17, 24], description: 'Move into research, cryptography, optimization, networking, and simulation.' },
+  {
+    id: 'qubit-village', name: 'Qubit Village', icon: '⚛️', range: [1, 2],
+    chapter: 'The Qubit Awakens',
+    description: 'Build a grounding in probability, vectors, quantum states, and measurement.',
+    objective: 'Explain how a qubit differs from a classical bit and interpret a measurement.',
+  },
+  {
+    id: 'superposition-valley', name: 'Superposition Valley', icon: '〰️', range: [3, 3],
+    chapter: 'The Superposition Valley',
+    description: 'Use single-qubit gates to reason about amplitudes, interference, and probabilities.',
+    objective: 'Predict how a Hadamard or Pauli gate changes a single-qubit state.',
+  },
+  {
+    id: 'gate-workshop', name: 'Quantum Gate Workshop', icon: '⚙️', range: [4, 4],
+    chapter: 'The Quantum Gate Workshop',
+    description: 'Move from one qubit to multi-qubit systems and controlled operations.',
+    objective: 'Build and explain a Bell-state circuit using H and CNOT.',
+  },
+  {
+    id: 'entanglement-realm', name: 'Entanglement Realm', icon: '🔗', range: [5, 6],
+    chapter: 'The Entanglement Realm',
+    description: 'Design circuits and interpret measurement, correlations, and quantum information.',
+    objective: 'Reason about circuit structure and the evidence provided by measurements.',
+  },
+  {
+    id: 'circuit-engineering-forge', name: 'Circuit Engineering Forge', icon: '🛠️', range: [7, 8],
+    chapter: 'The Circuit Engineering Forge',
+    description: 'Program, simulate, and compare circuits across the supported SDK ecosystem.',
+    objective: 'Create a runnable circuit and identify an appropriate execution tool.',
+  },
+  {
+    id: 'algorithm-citadel', name: 'Quantum Algorithm Citadel', icon: '🏛️', range: [9, 10],
+    chapter: 'The Quantum Algorithm Citadel',
+    description: 'Study the curriculum’s supported foundational and advanced quantum algorithms.',
+    objective: 'Choose and explain an algorithm for a well-defined quantum problem.',
+  },
+  {
+    id: 'advanced-quantum-frontier', name: 'Advanced Quantum Frontier', icon: '🚀', range: [11, 24],
+    chapter: 'The Quantum Frontier',
+    description: 'Explore QML, noise, error correction, hardware, cryptography, optimization, and research.',
+    objective: 'Apply prior foundations to an advanced topic or research-oriented project.',
+  },
 ];
 
 export function getRegionModules(region) {

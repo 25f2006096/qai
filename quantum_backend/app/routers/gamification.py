@@ -32,6 +32,16 @@ async def summary(user=Depends(require_configured_auth)):
         raise HTTPException(503, str(error)) from error
 
 
+@router.get("/leaderboard/weekly")
+async def weekly_leaderboard(user=Depends(require_configured_auth)):
+    if not user:
+        raise HTTPException(401, "Authentication is required for the learning leaderboard.")
+    try:
+        return {"success": True, "leaderboard": await store.weekly_leaderboard(user["id"])}
+    except RuntimeError as error:
+        raise HTTPException(503, str(error)) from error
+
+
 @router.post("/circuit-missions/{mission_id}/submit")
 async def submit_circuit_mission(mission_id: str, submission: CircuitMissionSubmission, user=Depends(require_configured_auth)):
     if not user:

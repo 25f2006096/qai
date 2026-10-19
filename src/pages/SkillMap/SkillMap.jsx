@@ -1,7 +1,9 @@
 import { useMemo, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useProgress } from '../../context/ProgressContext.jsx';
 import { SKILL_LABELS } from '../../data/modules.js';
 import AITutor from '../../components/ai/AITutor.jsx';
+import { getSkillTree } from '../../utils/skillTree.js';
 
 // Radar chart drawn with Canvas 2D
 function RadarChart({ skills, size = 300 }) {
@@ -103,7 +105,8 @@ function RadarChart({ skills, size = 300 }) {
 }
 
 export default function SkillMap() {
-  const { skills, getOverallKnowledge } = useProgress();
+  const { skills, progress, getOverallKnowledge } = useProgress();
+  const navigate = useNavigate();
   const overall = getOverallKnowledge();
 
   const skillEntries = Object.entries(skills || {});
@@ -115,6 +118,7 @@ export default function SkillMap() {
     // Check if any skill was recently updated (will be reactive via context)
     return skillEntries.some(([, v]) => v > 0);
   }, [skillEntries]);
+  const skillTree = useMemo(() => getSkillTree(skills, progress), [skills, progress]);
 
   return (
     <div className="page fade-in">
@@ -169,6 +173,26 @@ export default function SkillMap() {
           })}
         </div>
       </div>
+
+      <section className="card" style={{ marginBottom: 28 }} aria-labelledby="skill-tree-heading">
+        <h2 id="skill-tree-heading" style={{ fontSize: '1.1rem', marginBottom: 6 }}>🌿 Quantum Skill Tree</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '.82rem', marginTop: 0 }}>Prerequisites and related modules come from the curriculum. Mastery is a learning estimate from your saved assessment and exercise scores; verified mission evidence is shown separately in Achievements.</p>
+        <div style={{ display: 'grid', gap: 10 }}>
+          {skillTree.map(node => (
+            <article key={node.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(170px, .8fr) minmax(160px, 1.5fr) auto', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: '1px solid var(--border-glass)' }}>
+              <div>
+                <strong>{node.label}</strong>
+                <div style={{ color: 'var(--text-muted)', fontSize: '.73rem', marginTop: 3 }}>{node.prerequisites.length ? `Requires: ${node.prerequisites.map(id => SKILL_LABELS[id]).join(', ')}` : 'Foundation skill'}</div>
+              </div>
+              <div>
+                <div className="progress-bar" style={{ height: 7 }}><div className={`progress-fill ${node.state === 'mastered' ? 'success' : ''}`} style={{ width: `${node.score}%` }} /></div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '.73rem', marginTop: 4 }}>{node.score}% estimate · {node.completedEvidence}/{node.modules.length} related modules complete</div>
+              </div>
+              {node.nextModule && node.state !== 'locked' ? <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/modules/${node.nextModule.id}`)}>Module {node.nextModule.id} →</button> : <span className={`tag ${node.state === 'mastered' ? 'tag-success' : 'tag-info'}`}>{node.state === 'locked' ? '🔒 Prerequisite needed' : node.state === 'mastered' ? '✓ Mastered estimate' : 'Available'}</span>}
+            </article>
+          ))}
+        </div>
+      </section>
 
       {/* Detailed Breakdown */}
       <div className="card" style={{ marginBottom: 28 }}>

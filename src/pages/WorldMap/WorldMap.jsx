@@ -12,7 +12,7 @@ export default function WorldMap() {
     <div className="page fade-in">
       <div className="page-header">
         <h1 className="page-title">🗺️ Quantum World Map</h1>
-        <p className="page-subtitle">Your learning route is based on completed curriculum modules—not XP or page visits.</p>
+        <p className="page-subtitle">Seven chapters mapped to your completed curriculum modules—not XP or page visits.</p>
       </div>
 
       {available && (
@@ -20,6 +20,7 @@ export default function WorldMap() {
           <div style={{ fontSize: '.72rem', color: 'var(--accent)', fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase' }}>Next learning region</div>
           <h2 id="next-region-heading" style={{ margin: '5px 0 8px' }}>{available.icon} {available.name}</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: 14 }}>{available.description}</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '.82rem', marginBottom: 14 }}><strong>Learning objective:</strong> {available.objective}</p>
           {available.nextModule && <button className="btn btn-primary" onClick={() => navigate(`/modules/${available.nextModule.id}`)}>Start Module {available.nextModule.id} →</button>}
         </section>
       )}
@@ -32,9 +33,11 @@ export default function WorldMap() {
               <div className="world-region-index">Region {index + 1}</div>
               <div className="world-region-icon" aria-hidden="true">{locked ? '🔒' : region.icon}</div>
               <div>
+                <div style={{ color: 'var(--accent)', fontSize: '.73rem', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 5 }}>{region.chapter}</div>
                 <h2>{region.name}</h2>
                 <p>{region.description}</p>
               </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '.8rem', margin: 0 }}><strong>Objective:</strong> {region.objective}</p>
               <div className="world-region-progress">
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.78rem', marginBottom: 6 }}>
                   <span>{locked ? 'Complete earlier regions to unlock' : `${region.completedCount} of ${region.totalCount} modules`}</span>
