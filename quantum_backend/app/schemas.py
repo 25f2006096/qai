@@ -30,6 +30,12 @@ class CircuitRequest(BaseModel):
         return value
 
 
+class CircuitMissionSubmission(BaseModel):
+    """Structured circuit data accepted only for known server-validated missions."""
+    qubits: int = Field(ge=1, le=5)
+    operations: list[dict[str, Any]] = Field(min_length=1, max_length=40)
+
+
 class AlgorithmRequest(BaseModel):
     algorithm: Algorithm
     framework: Framework = "qiskit"

@@ -10,8 +10,6 @@ from typing import Any
 import httpx
 
 from app.config import settings
-from app.services.cirq_service import run_cirq
-from app.services.pennylane_service import run_pennylane
 from app.services.qiskit_service import compile_qiskit, run_qiskit
 
 
@@ -69,10 +67,17 @@ def _depth_and_gates(code: str, framework: str, fallback_gates: int = 0) -> tupl
 
 
 def _execute(framework: str, code: str) -> dict[str, Any]:
-    runners = {"qiskit": run_qiskit, "pennylane": run_pennylane, "cirq": run_cirq}
-    if framework not in runners:
+    if framework == "qiskit":
+        runner = run_qiskit
+    elif framework == "pennylane":
+        from app.services.pennylane_service import run_pennylane
+        runner = run_pennylane
+    elif framework == "cirq":
+        from app.services.cirq_service import run_cirq
+        runner = run_cirq
+    else:
         raise ValueError("Choose qiskit, pennylane, or cirq.")
-    return runners[framework](code, 1024)
+    return runner(code, 1024)
 
 
 class ContestStore:

@@ -9,8 +9,6 @@ from app.config import settings
 from app.schemas import AlgorithmRequest, CircuitRequest
 from app.security import require_configured_auth
 from app.services.algorithms import run_bell, run_bernstein_vazirani, run_deutsch_jozsa, run_grover, run_phase_estimation, run_qft, run_shor
-from app.services.cirq_service import run_cirq
-from app.services.pennylane_service import run_pennylane
 from app.services.qiskit_service import run_qiskit
 
 router = APIRouter(prefix="/api/quantum", tags=["Quantum"], dependencies=[Depends(require_configured_auth)])
@@ -30,9 +28,20 @@ def _prune_results(now: float | None = None) -> None:
             _results.pop(result_id, None)
 
 
+def _get_runner(framework: str) -> Callable[[str, int], Any]:
+    if framework == "qiskit":
+        return run_qiskit
+    if framework == "pennylane":
+        from app.services.pennylane_service import run_pennylane
+        return run_pennylane
+    if framework == "cirq":
+        from app.services.cirq_service import run_cirq
+        return run_cirq
+    raise HTTPException(status_code=400, detail="Choose qiskit, pennylane, or cirq.")
+
+
 def _run(request: CircuitRequest) -> dict[str, Any]:
-    runners: dict[str, Callable[[str, int], Any]] = {"qiskit": run_qiskit, "pennylane": run_pennylane, "cirq": run_cirq}
-    runner = runners[request.framework]
+    runner = _get_runner(request.framework)
     try:
         data = runner(request.code, request.shots)
     except ValueError as error:

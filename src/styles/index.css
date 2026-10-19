@@ -486,6 +486,26 @@ h3 { font-size: 1.25rem; }
 .achievement-icon { font-size: 2.5rem; }
 .achievement-name { font-size: 0.8rem; font-weight: 600; }
 
+/* Verified learning missions: compact progressive enhancement of existing cards. */
+.mission-panel {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+  margin: 0 0 20px; padding: 18px 20px; background: linear-gradient(135deg, rgba(37, 99, 235, .06), rgba(124, 58, 237, .05));
+  border: 1px solid rgba(37, 99, 235, .2); border-radius: var(--radius-md);
+}
+.mission-panel h2 { font-size: 1.05rem; margin: 3px 0 5px; }
+.mission-panel p { color: var(--text-secondary); font-size: .86rem; line-height: 1.5; }
+.mission-kicker { color: var(--accent); font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.mission-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.mission-feedback { width: 100%; padding: 9px 12px; border-radius: var(--radius-sm); font-size: .82rem; }
+.mission-feedback.error { color: var(--danger); background: rgba(220, 38, 38, .06); border: 1px solid rgba(220, 38, 38, .16); }
+.mission-toast {
+  position: fixed; right: 24px; bottom: 24px; z-index: 300; display: grid; gap: 4px;
+  max-width: min(360px, calc(100vw - 48px)); padding: 14px 16px; background: #ecfdf5;
+  border: 1px solid rgba(5, 150, 105, .26); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); color: #065f46;
+  animation: slideIn .3s ease;
+}
+.mission-toast span { font-size: .78rem; color: var(--text-secondary); }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -514,6 +534,8 @@ h3 { font-size: 1.25rem; }
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .page { padding: 20px; }
   .chat-panel { width: calc(100% - 40px); right: 20px; }
+  .mission-panel { align-items: stretch; }
+  .mission-panel > div:last-of-type { align-items: stretch !important; width: 100%; }
 }
 
 /* ═══ Bloch Sphere ═══ */

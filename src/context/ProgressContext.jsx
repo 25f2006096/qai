@@ -3,13 +3,17 @@ import { storage, createDefaultProgress, createDefaultSkills } from '../utils/st
 import { useAuth } from './AuthContext.jsx';
 import { updateSkillsFromScore } from '../utils/adaptive.js';
 import { MODULES } from '../data/modules.js';
+import { getGamificationSummary } from '../services/quantumApi.js';
 
-const ProgressContext = createContext({ progress: null, skills: null, getOverallKnowledge: () => 0 });
+const ProgressContext = createContext({ progress: null, skills: null, gamification: null, gamificationLoading: false, gamificationError: '', refreshGamification: async () => null, getOverallKnowledge: () => 0 });
 
 export function ProgressProvider({ children }) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [progress, setProgress] = useState(null);
   const [skills, setSkills] = useState(null);
+  const [gamification, setGamification] = useState(null);
+  const [gamificationLoading, setGamificationLoading] = useState(false);
+  const [gamificationError, setGamificationError] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -28,9 +32,41 @@ export function ProgressProvider({ children }) {
     } else {
       setProgress(null);
       setSkills(null);
+      setGamification(null);
+      setGamificationError('');
     }
     return () => { mounted = false; };
   }, [user]);
+
+  const refreshGamification = async () => {
+    if (!user) {
+      setGamification(null);
+      return null;
+    }
+    setGamificationLoading(true);
+    setGamificationError('');
+    try {
+      const response = await getGamificationSummary();
+      const summary = response?.summary || null;
+      setGamification(summary);
+      return summary;
+    } catch (error) {
+      setGamificationError(error.message || 'Unable to load your learning rewards.');
+      return null;
+    } finally {
+      setGamificationLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) refreshGamification();
+  }, [user?.id]);
+
+  const refreshRewardState = async () => {
+    const summary = await refreshGamification();
+    await refreshUser();
+    return summary;
+  };
 
   const updateProgress = (updates) => {
     if (!user || !progress) return;
@@ -133,6 +169,8 @@ export function ProgressProvider({ children }) {
       progress, skills, updateProgress, updateSkills,
       completeTopic, completeModule, recordTestScore, getOverallKnowledge,
       updateSkillFromExercise, trackGateUsage, completePuzzle,
+      gamification, gamificationLoading, gamificationError,
+      refreshGamification: refreshRewardState,
     }}>
       {children}
     </ProgressContext.Provider>
@@ -141,6 +179,6 @@ export function ProgressProvider({ children }) {
 
 export const useProgress = () => {
   const ctx = useContext(ProgressContext);
-  if (!ctx) return { progress: null, skills: null, getOverallKnowledge: () => 0, updateProgress: () => {}, updateSkills: () => {}, completeTopic: () => {}, completeModule: () => {}, recordTestScore: () => {}, updateSkillFromExercise: () => {}, trackGateUsage: () => {}, completePuzzle: () => {} };
+  if (!ctx) return { progress: null, skills: null, gamification: null, gamificationLoading: false, gamificationError: '', refreshGamification: async () => null, getOverallKnowledge: () => 0, updateProgress: () => {}, updateSkills: () => {}, completeTopic: () => {}, completeModule: () => {}, recordTestScore: () => {}, updateSkillFromExercise: () => {}, trackGateUsage: () => {}, completePuzzle: () => {} };
   return ctx;
 };

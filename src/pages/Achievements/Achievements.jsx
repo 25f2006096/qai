@@ -3,7 +3,8 @@ import { ACHIEVEMENTS } from '../../data/modules.js';
 import AITutor from '../../components/ai/AITutor.jsx';
 
 export default function Achievements() {
-  const { progress } = useProgress();
+  const { progress, gamification, gamificationLoading, gamificationError, refreshGamification } = useProgress();
+  const verifiedAchievements = gamification?.achievements || [];
 
   return (
     <div className="page fade-in">
@@ -11,6 +12,34 @@ export default function Achievements() {
         <h1 className="page-title">🏆 Achievements & Badges</h1>
         <p className="page-subtitle">Unlock badges as you complete tests, modules, and experiments</p>
       </div>
+
+      {verifiedAchievements.length > 0 && (
+        <section className="card" style={{ marginBottom: 24 }} aria-labelledby="verified-achievements-heading">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <div>
+              <h2 id="verified-achievements-heading" style={{ fontSize: '1.05rem' }}>✨ Verified achievements</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '.82rem', marginTop: 4 }}>Unlocked by trusted mission validation and saved to your learner record.</p>
+            </div>
+            <span className="tag tag-success">{verifiedAchievements.length} earned</span>
+          </div>
+          <div className="grid grid-4">
+            {verifiedAchievements.map(achievement => (
+              <div key={achievement.id} className="achievement-badge unlocked">
+                <div className="achievement-icon">{achievement.icon}</div>
+                <div className="achievement-name">{achievement.name}</div>
+                <div className="achievement-desc" style={{ fontSize: '.75rem', color: 'var(--text-secondary)' }}>{achievement.description}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {gamificationLoading && !gamification && <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>Loading verified achievement records…</p>}
+      {gamificationError && (
+        <div className="mission-feedback error" role="status" style={{ marginBottom: 16 }}>
+          Unable to load verified achievement records. <button className="text-action" onClick={refreshGamification}>Retry</button>
+        </div>
+      )}
 
       <div className="grid grid-3">
         {ACHIEVEMENTS.map(a => {

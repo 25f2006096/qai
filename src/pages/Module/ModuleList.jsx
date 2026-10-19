@@ -1,11 +1,17 @@
 import { useNavigate } from 'react-router-dom';
 import { useProgress } from '../../context/ProgressContext.jsx';
 import { MODULES, MODULE_CATEGORIES } from '../../data/modules.js';
+import { missionLabel } from '../../utils/gamification.js';
 import AITutor from '../../components/ai/AITutor.jsx';
 
 export default function ModuleList() {
   const nav = useNavigate();
-  const { progress } = useProgress();
+  const { progress, gamification } = useProgress();
+  const missionByModule = (gamification?.missions || []).reduce((lookup, mission) => {
+    if (mission.id === 'build-superposition') lookup[2] = mission;
+    if (mission.id === 'build-bell-state') lookup[4] = mission;
+    return lookup;
+  }, {});
 
   const getStatus = (mod) => {
     if (progress?.completedModules?.includes(mod.id)) return 'completed';
@@ -31,6 +37,7 @@ export default function ModuleList() {
               {mods.map(mod => {
                 const status = getStatus(mod);
                 const score = progress?.moduleScores?.[mod.id];
+                const mission = missionByModule[mod.id];
                 return (
                   <div
                     key={mod.id}
@@ -54,6 +61,14 @@ export default function ModuleList() {
                     {mod.prereqs.length > 0 && (
                       <div style={{ marginTop: 8, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                         Prereqs: {mod.prereqs.map(p => `M${p}`).join(', ')}
+                      </div>
+                    )}
+                    {mission && (
+                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-glass)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>🎯 {mission.title}</span>
+                        <span className={`tag ${['completed', 'mastered'].includes(mission.status) ? 'tag-success' : 'tag-accent'}`} style={{ fontSize: '0.68rem' }}>
+                          {['completed', 'mastered'].includes(mission.status) ? missionLabel(mission.status) : `+${mission.xp_reward} XP`}
+                        </span>
                       </div>
                     )}
                   </div>

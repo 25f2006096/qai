@@ -3,15 +3,27 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useProgress } from '../../context/ProgressContext.jsx';
 import { MODULES, SKILL_LABELS, ACHIEVEMENTS } from '../../data/modules.js';
 import { getNextModule } from '../../utils/adaptive.js';
+import { levelForXp, missionLabel } from '../../utils/gamification.js';
 import AITutor from '../../components/ai/AITutor.jsx';
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { progress, skills, getOverallKnowledge } = useProgress();
+  const { progress, skills, gamification, gamificationLoading, gamificationError, refreshGamification, getOverallKnowledge } = useProgress();
   const nav = useNavigate();
   const knowledge = getOverallKnowledge();
   const nextMod = progress && skills ? getNextModule(progress, skills, user?.goal) : null;
   const completedCount = progress?.completedModules?.length || 0;
+  const localLevel = levelForXp(user?.total_xp || 0);
+  const level = gamification?.level || {
+    number: localLevel.number,
+    name: localLevel.name,
+    next_threshold: localLevel.nextThreshold,
+    progress_percent: localLevel.progressPercent,
+  };
+  const totalXp = gamification?.total_xp ?? user?.total_xp ?? 0;
+  const streak = gamification?.current_streak ?? user?.current_streak ?? 0;
+  const nextMission = gamification?.next_mission;
+  const earnedMissionBadges = gamification?.achievements || [];
 
   const weakSkills = skills ? Object.entries(skills).filter(([, v]) => v < 40 && v > 0).sort((a, b) => a[1] - b[1]).slice(0, 3) : [];
   const strongSkills = skills ? Object.entries(skills).filter(([, v]) => v >= 60).sort((a, b) => b[1] - a[1]).slice(0, 3) : [];
@@ -30,7 +42,7 @@ export default function Dashboard() {
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Streak</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>🔥 {progress?.streak || 0}</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>🔥 {streak}</div>
         </div>
       </div>
 
@@ -62,6 +74,62 @@ export default function Dashboard() {
           <div className="stat-value">{unlockedAchievements.length}</div>
           <div className="stat-label">Achievements</div>
         </div>
+      </div>
+
+      {/* Compact server-authoritative gamification summary */}
+      <div className="grid grid-2" style={{ marginBottom: 28 }}>
+        <section className="card" aria-labelledby="level-progress-heading">
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}>
+            <div>
+              <div id="level-progress-heading" style={{ fontSize: '0.75rem', color: 'var(--accent-light)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>⚡ Learning Progress</div>
+              <h3 style={{ marginTop: 6 }}>Level {level.number}: {level.name}</h3>
+            </div>
+            <div className="tag tag-accent">{totalXp} XP</div>
+          </div>
+          <div className="progress-bar" aria-label={`Level progress: ${level.progress_percent || 0}%`}>
+            <div className="progress-fill" style={{ width: `${level.progress_percent || 0}%` }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+            <span>{level.progress_percent || 0}% to next level</span>
+            <span>{level.next_threshold ? `${totalXp} / ${level.next_threshold} XP` : 'Maximum level reached'}</span>
+          </div>
+          {gamificationError && (
+            <div role="status" style={{ marginTop: 12, fontSize: '0.78rem', color: 'var(--warning)' }}>
+              Rewards are unavailable right now. <button className="text-action" onClick={refreshGamification}>Retry</button>
+            </div>
+          )}
+        </section>
+
+        <section className="card" aria-labelledby="next-mission-heading">
+          <div id="next-mission-heading" style={{ fontSize: '0.75rem', color: 'var(--accent-light)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>🎯 Your Next Mission</div>
+          {gamificationLoading && !gamification ? (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading your verified missions…</p>
+          ) : nextMission ? (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+                <h3>{nextMission.title}</h3>
+                <span className="tag tag-accent">+{nextMission.xp_reward} XP</span>
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', lineHeight: 1.5 }}>{nextMission.description}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <span className="tag tag-info">{nextMission.estimated_minutes} min</span>
+                <span className="tag tag-info">{missionLabel(nextMission.status)}</span>
+                <button className="btn btn-primary btn-sm" onClick={() => nav(nextMission.route)}>Open Mission →</button>
+              </div>
+            </>
+          ) : gamification ? (
+            <>
+              <h3>All verified missions complete</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', marginTop: 6 }}>Keep exploring the curriculum, lab, and contests to deepen your skills.</p>
+            </>
+          ) : (
+            <>
+              <h3>Continue your learning path</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', marginTop: 6 }}>Verified circuit missions appear here when reward services are available.</p>
+              <button className="btn btn-secondary btn-sm" style={{ marginTop: 12 }} onClick={() => nav('/circuit')}>Open Circuit Builder</button>
+            </>
+          )}
+        </section>
       </div>
 
       <div className="grid grid-2" style={{ marginBottom: 28 }}>
@@ -147,11 +215,11 @@ export default function Dashboard() {
       )}
 
       {/* Achievements */}
-      {unlockedAchievements.length > 0 && (
+      {(earnedMissionBadges.length > 0 || unlockedAchievements.length > 0) && (
         <div className="card">
           <div style={{ fontWeight: 700, marginBottom: 16 }}>🏆 Recent Achievements</div>
           <div className="grid grid-4">
-            {unlockedAchievements.slice(0, 4).map(a => (
+            {[...earnedMissionBadges, ...unlockedAchievements.filter(a => !earnedMissionBadges.some(earned => earned.id === a.id))].slice(0, 4).map(a => (
               <div key={a.id} className="achievement-badge unlocked">
                 <div className="achievement-icon">{a.icon}</div>
                 <div className="achievement-name">{a.name}</div>

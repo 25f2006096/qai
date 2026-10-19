@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useProgress } from '../../context/ProgressContext.jsx';
 import { storage } from '../../utils/storage.js';
 import { simulateCircuit, getProbabilities, measure, blochCoords, getQubitProbabilities, getReducedQubitState } from '../../utils/quantum.js';
+import { submitCircuitMission } from '../../services/quantumApi.js';
 import AITutor from '../../components/ai/AITutor.jsx';
 import BlochSphere from '../../components/BlochSphere.jsx';
 import CircuitExplainer from '../../components/CircuitExplainer.jsx';
@@ -69,7 +70,7 @@ function qasmToOps(qasmText) {
 
 export default function CircuitBuilder({ embedded = false, initialQubits = 2, gateBudget, onOpsChange } = {}) {
   const { user } = useAuth();
-  const { trackGateUsage } = useProgress();
+  const { trackGateUsage, gamification, refreshGamification } = useProgress();
   const [nQubits, setNQubits] = useState(initialQubits);
   const [ops, setOps] = useState([]); // {gate, target, control?, col, angle?}
   const [dragGate, setDragGate] = useState(null);
@@ -86,6 +87,15 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
   const [qasmText, setQasmText] = useState('');
   const [shareToast, setShareToast] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
+  const [missionStatus, setMissionStatus] = useState(null);
+  const [missionError, setMissionError] = useState('');
+  const [missionSubmitting, setMissionSubmitting] = useState(false);
+  const [missionToast, setMissionToast] = useState(null);
+
+  const queryMissionId = !embedded ? new URLSearchParams(window.location.search).get('mission') : null;
+  const missions = gamification?.missions || [];
+  const activeMission = missions.find(mission => mission.id === queryMissionId)
+    || (queryMissionId ? null : missions.find(mission => !['completed', 'mastered'].includes(mission.status)));
 
   // Load saved circuits & check URL query params for shared circuits
   useEffect(() => {
@@ -189,6 +199,29 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
     } catch (e) { setResults({ error: e.message }); }
   };
 
+  const submitMission = async () => {
+    if (!activeMission || !user || missionSubmitting) return;
+    setMissionSubmitting(true);
+    setMissionError('');
+    setMissionToast(null);
+    try {
+      const response = await submitCircuitMission(activeMission.id, {
+        qubits: nQubits,
+        operations: ops,
+      });
+      const reward = response?.reward || {};
+      setMissionStatus(reward.awarded ? 'completed' : 'already-completed');
+      await refreshGamification();
+      setMissionToast(reward.awarded
+        ? { message: `Mission complete: +${reward.xp_awarded} XP`, achievements: reward.new_achievements || [] }
+        : { message: 'Mission already completed. Your XP was not duplicated.', achievements: [] });
+    } catch (error) {
+      setMissionError(error.message || 'The mission could not be verified. Review the circuit and try again.');
+    } finally {
+      setMissionSubmitting(false);
+    }
+  };
+
   const saveCircuit = async () => {
     if (!user || !saveName.trim()) return;
     await storage.insertCircuit(user.id, saveName, nQubits, ops);
@@ -214,6 +247,28 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
           <h1 className="page-title">⚡ Quantum Circuit Builder</h1>
           <p className="page-subtitle">Drag gates onto qubit wires, see live state probabilities, and visualize on the Bloch sphere</p>
         </div>
+      )}
+
+      {!embedded && activeMission && (
+        <section className="mission-panel" aria-labelledby="circuit-mission-heading">
+          <div style={{ flex: 1 }}>
+            <div className="mission-kicker">🎯 Verified circuit mission</div>
+            <h2 id="circuit-mission-heading">{activeMission.title}</h2>
+            <p>{activeMission.description}</p>
+            <div className="mission-meta">
+              <span className="tag tag-accent">+{activeMission.xp_reward} XP</span>
+              <span className="tag tag-info">{activeMission.estimated_minutes} min</span>
+              <span className="tag tag-info">Backend-validated</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
+            <button className="btn btn-primary btn-sm" onClick={submitMission} disabled={missionSubmitting || !results || Boolean(results?.error) || ops.filter(op => op.gate !== 'M').length === 0}>
+              {missionSubmitting ? 'Verifying…' : missionStatus === 'completed' ? '✓ Verified' : 'Verify & Claim XP'}
+            </button>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'right' }}>{results ? 'Rewards are granted once after server validation.' : 'Run a local simulation before verifying.'}</span>
+          </div>
+          {missionError && <div className="mission-feedback error" role="alert">{missionError}</div>}
+        </section>
       )}
 
       {/* Gate Palette */}
@@ -526,6 +581,15 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
         </div>
       )}
 
+      {!embedded && missionToast && (
+        <div className="mission-toast" role="status" aria-live="polite">
+          <strong>🎉 {missionToast.message}</strong>
+          {missionToast.achievements?.length > 0 && (
+            <span>{missionToast.achievements.map(achievement => `${achievement.icon} ${achievement.name}`).join(' · ')}</span>
+          )}
+        </div>
+      )}
+
       {!embedded && saveToast && (
         <div className="tag tag-success" style={{ position: 'fixed', bottom: 24, left: 24, zIndex: 1000, padding: '12px 20px', borderRadius: 8, boxShadow: 'var(--shadow-lg)' }}>
           💾 Circuit Saved Successfully!
@@ -540,7 +604,7 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
         />
       )}
 
-      {!embedded && <AITutor />}
+      {!embedded && <AITutor mission={activeMission} />}
     </div>
   );
 }

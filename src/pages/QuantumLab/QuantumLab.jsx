@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { simulateCircuit, getProbabilities, measure, initState, applyGate, getReducedBlochCoords } from '../../utils/quantum.js';
 import AITutor from '../../components/ai/AITutor.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useProgress } from '../../context/ProgressContext.jsx';
 import { storage } from '../../utils/storage.js';
 import { submitIbmJob, executeCircuit, getCapabilities, getIbmBackends } from '../../services/quantumApi.js';
 import Editor from '@monaco-editor/react';
@@ -173,6 +175,8 @@ class ErrorBoundary extends React.Component {
 
 function QuantumLabInner() {
   const { user } = useAuth();
+  const { gamification } = useProgress();
+  const nav = useNavigate();
   const [activeTab, setActiveTab] = useState('setup'); // 'setup', 'results', 'state', 'code', 'hardware', 'history'
   const [preset, setPreset] = useState('Bell State |Φ⁺⟩');
   const [customOps, setCustomOps] = useState(PRESETS['Bell State |Φ⁺⟩'].ops);
@@ -520,6 +524,22 @@ print("Cirq Execution Results:\\n", result.histogram(key='result'))
           </div>
         )}
       </div>
+
+      {gamification?.next_mission && (
+        <div className="mission-panel" style={{ marginBottom: 20 }}>
+          <div style={{ flex: 1 }}>
+            <div className="mission-kicker">🎯 Active Learning Mission</div>
+            <h2 style={{ fontSize: '1rem', margin: '4px 0' }}>{gamification.next_mission.title}</h2>
+            <p style={{ margin: 0 }}>{gamification.next_mission.description}</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className="tag tag-accent">+{gamification.next_mission.xp_reward} XP</span>
+            <button className="btn btn-primary btn-sm" onClick={() => nav(gamification.next_mission.route)}>
+              Open in Circuit Builder →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Navigation Tabs */}
       <div className="explainer-tabs" style={{ marginBottom: 24 }}>

@@ -82,6 +82,12 @@ export const submitContestProblem = (contestId, problemId, submission) => reques
 export const getContestLeaderboard = (contestId) => request(`/api/contests/${encodeURIComponent(contestId)}/leaderboard`);
 export const getMyContestRating = () => request('/api/contests/me/rating');
 
+export const getGamificationSummary = () => request('/api/gamification/summary');
+export const submitCircuitMission = (missionId, payload) => request(
+  `/api/gamification/circuit-missions/${encodeURIComponent(missionId)}/submit`,
+  { method: 'POST', body: JSON.stringify(payload) },
+);
+
 export const adminApi = {
   dashboard: () => request('/api/admin/dashboard'),
   settings: () => request('/api/admin/settings'),

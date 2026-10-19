@@ -119,7 +119,7 @@ function FormattedMessage({ text }) {
   );
 }
 
-export default function AITutor({ moduleId, topicName }) {
+export default function AITutor({ moduleId, topicName, mission }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -170,7 +170,8 @@ export default function AITutor({ moduleId, topicName }) {
     setLoading(true);
 
     try {
-      const aiText = await getGroqResponse(input, messages, moduleId, topicName);
+      const tutorTopic = mission?.title ? `${topicName || 'Circuit mission'} — ${mission.title}` : topicName;
+      const aiText = await getGroqResponse(input, messages, moduleId, tutorTopic);
       const aiMsg = { role: 'ai', text: aiText };
       const final = [...updatedWithUser, aiMsg];
       setMessages(final);
@@ -205,7 +206,9 @@ export default function AITutor({ moduleId, topicName }) {
             </svg>
             <span>AI Quantum Tutor</span>
           </div>
-          {moduleId && <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Module {moduleId}{topicName ? ` · ${topicName}` : ''}</div>}
+          {(moduleId || mission) && <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+            {moduleId ? `Module ${moduleId}` : 'Circuit Builder'}{topicName ? ` · ${topicName}` : ''}{mission?.title ? ` · Mission: ${mission.title}` : ''}
+          </div>}
         </div>
         <button className="btn btn-secondary btn-sm btn-icon" onClick={() => setOpen(false)}>✕</button>
       </div>
