@@ -24,6 +24,12 @@ export default function Dashboard() {
   const streak = gamification?.current_streak ?? user?.current_streak ?? 0;
   const nextMission = gamification?.next_mission;
   const earnedMissionBadges = gamification?.achievements || [];
+  const dailyQuests = gamification?.daily_quests || [
+    { id: 'daily-sim', title: 'Quantum Experimenter', description: 'Simulate at least 1 circuit or run an experiment today.', target: 1, progress: 0, completed: false, xp_reward: 15, icon: '🔬' },
+    { id: 'daily-quiz', title: 'Knowledge Seeker', description: 'Answer at least 3 practice questions or assessment checkpoints.', target: 3, progress: 0, completed: false, xp_reward: 20, icon: '📝' },
+    { id: 'daily-mission', title: 'Mission Specialist', description: 'Complete 1 verified circuit mission.', target: 1, progress: 0, completed: false, xp_reward: 25, icon: '🎯' },
+  ];
+  const leaderboard = gamification?.leaderboard || [];
 
   const weakSkills = skills ? Object.entries(skills).filter(([, v]) => v < 40 && v > 0).sort((a, b) => a[1] - b[1]).slice(0, 3) : [];
   const strongSkills = skills ? Object.entries(skills).filter(([, v]) => v >= 60).sort((a, b) => b[1] - a[1]).slice(0, 3) : [];
@@ -164,6 +170,67 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Daily Quests & Weekly Leaderboard */}
+      <div className="grid grid-2" style={{ marginBottom: 28 }}>
+        {/* Daily Quests */}
+        <section className="card" aria-labelledby="daily-quests-heading">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div id="daily-quests-heading" style={{ fontSize: '0.75rem', color: 'var(--accent-light)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+              ⚡ Daily Quests
+            </div>
+            <span className="tag tag-info">Resets daily</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {dailyQuests.map(quest => (
+              <div key={quest.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-glass)' }}>
+                <span style={{ fontSize: '1.4rem' }}>{quest.icon}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                    <strong style={{ fontSize: '0.85rem' }}>{quest.title}</strong>
+                    <span className={`tag ${quest.completed ? 'tag-success' : 'tag-accent'}`} style={{ fontSize: '0.7rem' }}>
+                      {quest.completed ? '✓ Completed' : `+${quest.xp_reward} XP`}
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{quest.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Weekly Leaderboard */}
+        <section className="card" aria-labelledby="leaderboard-heading">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div id="leaderboard-heading" style={{ fontSize: '0.75rem', color: 'var(--accent-light)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+              🏆 Top Learners (Weekly)
+            </div>
+            <span className="tag tag-info">Verified XP</span>
+          </div>
+          {leaderboard.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {leaderboard.slice(0, 5).map(entry => (
+                <div key={entry.rank} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-glass)', border: '1px solid var(--border-glass)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ width: 22, fontWeight: 700, color: entry.rank === 1 ? '#eab308' : entry.rank === 2 ? '#94a3b8' : entry.rank === 3 ? '#d97706' : 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      #{entry.rank}
+                    </span>
+                    <span style={{ fontSize: '0.86rem', fontWeight: 600 }}>{entry.display_name}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {entry.current_streak > 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>🔥 {entry.current_streak}d</span>}
+                    <span className="tag tag-accent" style={{ fontSize: '0.75rem' }}>{entry.total_xp} XP</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '12px 0' }}>
+              Complete verified missions and quizzes to place on the weekly leaderboard!
+            </p>
+          )}
+        </section>
       </div>
 
       <div className="grid grid-3" style={{ marginBottom: 28 }}>

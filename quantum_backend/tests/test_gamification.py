@@ -1,7 +1,7 @@
 import pytest
 
 from app.routers.gamification import _normalise_operations, _simulation_matches_mission, _validate_mission
-from app.services.gamification_service import level_for_xp
+from app.services.gamification_service import level_for_xp, mask_display_name
 
 
 def superposition_operations():
@@ -48,3 +48,10 @@ def test_mission_validation_rejects_invalid_circuit_data():
         _normalise_operations([{"gate": "CNOT", "target": 0, "control": 0}], 1)
     with pytest.raises(ValueError, match="not supported"):
         _validate_mission("not-a-real-mission", [], 1)
+
+
+def test_privacy_safe_leaderboard_display_name():
+    assert mask_display_name("Alice Johnson") == "Alice J."
+    assert mask_display_name("Bob") == "Bob"
+    assert mask_display_name(None) == "Quantum Explorer"
+    assert mask_display_name("   ") == "Quantum Explorer"

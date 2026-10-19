@@ -95,6 +95,14 @@ async def get_summary(user=Depends(require_configured_auth)):
         raise HTTPException(status_code=503, detail="Gamification data is temporarily unavailable.") from error
 
 
+@router.get("/leaderboard/weekly")
+async def get_weekly_leaderboard(user=Depends(require_configured_auth)):
+    try:
+        return {"success": True, "leaderboard": await store.leaderboard()}
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail="Leaderboard data is temporarily unavailable.") from error
+
+
 @router.post("/circuit-missions/{mission_id}/submit")
 async def submit_circuit_mission(mission_id: str, request: CircuitMissionSubmission, user=Depends(require_configured_auth)):
     if not user:

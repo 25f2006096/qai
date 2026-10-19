@@ -83,6 +83,7 @@ export const getContestLeaderboard = (contestId) => request(`/api/contests/${enc
 export const getMyContestRating = () => request('/api/contests/me/rating');
 
 export const getGamificationSummary = () => request('/api/gamification/summary');
+export const getWeeklyLeaderboard = () => request('/api/gamification/leaderboard/weekly');
 export const submitCircuitMission = (missionId, payload) => request(
   `/api/gamification/circuit-missions/${encodeURIComponent(missionId)}/submit`,
   { method: 'POST', body: JSON.stringify(payload) },

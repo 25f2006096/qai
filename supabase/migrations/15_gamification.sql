@@ -61,6 +61,27 @@ CREATE TABLE IF NOT EXISTS public.user_achievements (
 );
 CREATE INDEX IF NOT EXISTS idx_user_achievements_user_unlocked ON public.user_achievements(user_id, unlocked_at DESC);
 
+CREATE TABLE IF NOT EXISTS public.daily_quests (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    quest_type TEXT NOT NULL,
+    target_count INTEGER NOT NULL DEFAULT 1,
+    xp_reward INTEGER NOT NULL CHECK (xp_reward > 0),
+    icon TEXT NOT NULL DEFAULT '🎯'
+);
+
+CREATE TABLE IF NOT EXISTS public.user_quest_progress (
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    quest_id TEXT NOT NULL REFERENCES public.daily_quests(id) ON DELETE CASCADE,
+    quest_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    current_count INTEGER NOT NULL DEFAULT 0,
+    completed BOOLEAN NOT NULL DEFAULT FALSE,
+    completed_at TIMESTAMPTZ,
+    PRIMARY KEY (user_id, quest_id, quest_date)
+);
+CREATE INDEX IF NOT EXISTS idx_user_quest_progress_user_date ON public.user_quest_progress(user_id, quest_date);
+
 INSERT INTO public.gamification_missions
     (id, title, description, mission_type, route, difficulty, xp_reward, estimated_minutes)
 VALUES
@@ -74,6 +95,17 @@ ON CONFLICT (id) DO UPDATE SET
     xp_reward = EXCLUDED.xp_reward,
     estimated_minutes = EXCLUDED.estimated_minutes,
     updated_at = NOW();
+
+INSERT INTO public.daily_quests (id, title, description, quest_type, target_count, xp_reward, icon)
+VALUES
+    ('daily-sim', 'Quantum Experimenter', 'Simulate a circuit or run a quantum experiment today.', 'circuit_simulation', 1, 15, '🔬'),
+    ('daily-quiz', 'Knowledge Seeker', 'Answer at least 3 questions in topic quizzes or assessments.', 'quiz_questions', 3, 20, '📝'),
+    ('daily-mission', 'Mission Specialist', 'Complete 1 verified circuit mission.', 'mission_completion', 1, 25, '🎯')
+ON CONFLICT (id) DO UPDATE SET
+    title = EXCLUDED.title,
+    description = EXCLUDED.description,
+    xp_reward = EXCLUDED.xp_reward,
+    icon = EXCLUDED.icon;
 
 INSERT INTO public.gamification_achievement_definitions (id, name, description, icon)
 VALUES
@@ -91,12 +123,16 @@ ALTER TABLE public.mission_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.xp_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gamification_achievement_definitions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_achievements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.daily_quests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_quest_progress ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "gamification_missions_read" ON public.gamification_missions;
 DROP POLICY IF EXISTS "gamification_achievement_definitions_read" ON public.gamification_achievement_definitions;
 DROP POLICY IF EXISTS "mission_progress_read_own" ON public.mission_progress;
 DROP POLICY IF EXISTS "xp_transactions_read_own" ON public.xp_transactions;
 DROP POLICY IF EXISTS "user_achievements_read_own" ON public.user_achievements;
+DROP POLICY IF EXISTS "daily_quests_read" ON public.daily_quests;
+DROP POLICY IF EXISTS "user_quest_progress_read_own" ON public.user_quest_progress;
 
 CREATE POLICY "gamification_missions_read" ON public.gamification_missions
     FOR SELECT USING (active OR public.is_instructor_or_admin());
@@ -107,6 +143,10 @@ CREATE POLICY "mission_progress_read_own" ON public.mission_progress
 CREATE POLICY "xp_transactions_read_own" ON public.xp_transactions
     FOR SELECT USING (user_id = auth.uid() OR public.is_admin());
 CREATE POLICY "user_achievements_read_own" ON public.user_achievements
+    FOR SELECT USING (user_id = auth.uid() OR public.is_admin());
+CREATE POLICY "daily_quests_read" ON public.daily_quests
+    FOR SELECT USING (TRUE);
+CREATE POLICY "user_quest_progress_read_own" ON public.user_quest_progress
     FOR SELECT USING (user_id = auth.uid() OR public.is_admin());
 
 -- Only the backend service role may call this routine. It is intentionally not
