@@ -4,6 +4,7 @@ from app.schemas import ContestSubmissionRequest
 from app.security import require_configured_auth
 from app.services.contest_service import contest_status, queue_hardware_fidelity, score_submission, store
 from app.services.admin_service import DEFAULT_PLATFORM_SETTINGS, store as admin_store
+from app.services.gamification_service import store as gamification_store
 
 router = APIRouter(prefix="/api/contests", tags=["Contests"])
 
@@ -63,7 +64,16 @@ async def submit(contest_id: str, problem_id: str, request: ContestSubmissionReq
     qualifies_for_hardware = submission["is_best_for_user"] and submission["correctness_score"] >= problem["pass_threshold"]
     if qualifies_for_hardware:
         background_tasks.add_task(queue_hardware_fidelity, submission, problem)
-    return {"success": True, "submission": submission, "rank": rank, "fidelity_status": "queued" if qualifies_for_hardware else "not_queued"}
+    reward = None
+    # Scoring is server-side, so only a qualifying best solution can reach the
+    # reward function. A missing optional gamification migration never invalidates
+    # a legitimate contest submission.
+    if qualifies_for_hardware and user:
+        try:
+            reward = await gamification_store.award(user["id"], "contest_solution", f"contest:{contest_id}:problem:{problem_id}")
+        except RuntimeError:
+            reward = None
+    return {"success": True, "submission": submission, "rank": rank, "fidelity_status": "queued" if qualifies_for_hardware else "not_queued", "reward": reward}
 
 
 @router.post("/{contest_id}/finalize")

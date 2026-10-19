@@ -213,7 +213,7 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
       setMissionStatus(reward.awarded ? 'completed' : 'already-completed');
       await refreshGamification();
       setMissionToast(reward.awarded
-        ? { message: `Mission complete: +${reward.xp_awarded} XP`, achievements: reward.new_achievements || [] }
+        ? { message: `Mission complete: +${reward.xp_awarded + (reward.daily_quest_xp || 0)} XP${reward.daily_quest_xp ? ' (including daily quest bonus)' : ''}`, achievements: reward.new_achievements || [] }
         : { message: 'Mission already completed. Your XP was not duplicated.', achievements: [] });
     } catch (error) {
       setMissionError(error.message || 'The mission could not be verified. Review the circuit and try again.');
