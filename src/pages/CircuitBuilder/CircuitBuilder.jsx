@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useProgress } from '../../context/ProgressContext.jsx';
 import { storage } from '../../utils/storage.js';
@@ -13,6 +13,16 @@ const GATE_COLORS = { H:'#7c4dff', X:'#ff5252', Y:'#ff9800', Z:'#2196f3', S:'#00
 const BASIC_GATES = ['H','X','Y','Z','S','T','CNOT','SWAP','M'];
 const ROTATION_GATES = ['Rx','Ry','Rz'];
 const ALL_GATES = [...BASIC_GATES, ...ROTATION_GATES];
+
+const REPAIR_SCENARIOS = {
+  'superposition-reset': {
+    missionId: 'build-superposition',
+    title: 'Repair: restore superposition',
+    instruction: 'This circuit incorrectly flips q0. Remove the X gate, then create the required equal superposition with exactly one H gate on q0.',
+    qubits: 1,
+    operations: [{ gate: 'X', target: 0, col: 0 }],
+  },
+};
 
 function opsToQasm(ops, nQubits) {
   let qasm = `OPENQASM 2.0;\ninclude "qelib1.inc";\n\nqreg q[${nQubits}];\ncreg c[${nQubits}];\n\n`;
@@ -91,8 +101,11 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
   const [missionError, setMissionError] = useState('');
   const [missionSubmitting, setMissionSubmitting] = useState(false);
   const [missionToast, setMissionToast] = useState(null);
+  const repairLoaded = useRef(false);
 
   const queryMissionId = !embedded ? new URLSearchParams(window.location.search).get('mission') : null;
+  const repairId = !embedded ? new URLSearchParams(window.location.search).get('repair') : null;
+  const repairScenario = repairId ? REPAIR_SCENARIOS[repairId] : null;
   const missions = gamification?.missions || [];
   const activeMission = missions.find(mission => mission.id === queryMissionId)
     || (queryMissionId ? null : missions.find(mission => !['completed', 'mastered'].includes(mission.status)));
@@ -113,6 +126,16 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
       } catch (e) { console.error('Failed to parse shared circuit', e); }
     }
   }, [user, embedded]);
+
+  useEffect(() => {
+    if (embedded || repairLoaded.current || !repairScenario) return;
+    repairLoaded.current = true;
+    setNQubits(repairScenario.qubits);
+    setOps(repairScenario.operations);
+    setHistory([repairScenario.operations]);
+    setHistIdx(0);
+    setResults(null);
+  }, [embedded, repairScenario]);
 
   useEffect(() => {
     if (embedded) setNQubits(initialQubits);
@@ -255,6 +278,11 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
             <div className="mission-kicker">🎯 Verified circuit mission</div>
             <h2 id="circuit-mission-heading">{activeMission.title}</h2>
             <p>{activeMission.description}</p>
+            {repairScenario && repairScenario.missionId === activeMission.id && (
+              <div className="mission-feedback" role="status" style={{ marginTop: 10 }}>
+                <strong>{repairScenario.title}:</strong> {repairScenario.instruction}
+              </div>
+            )}
             <div className="mission-meta">
               <span className="tag tag-accent">+{activeMission.xp_reward} XP</span>
               <span className="tag tag-info">{activeMission.estimated_minutes} min</span>
@@ -269,6 +297,12 @@ export default function CircuitBuilder({ embedded = false, initialQubits = 2, ga
           </div>
           {missionError && <div className="mission-feedback error" role="alert">{missionError}</div>}
         </section>
+      )}
+
+      {!embedded && !repairScenario && queryMissionId === 'build-superposition' && (
+        <button className="text-action" style={{ marginBottom: 12 }} onClick={() => window.location.assign('/circuit?mission=build-superposition&repair=superposition-reset')}>
+          Try the guided Circuit Repair Mission →
+        </button>
       )}
 
       {/* Gate Palette */}
